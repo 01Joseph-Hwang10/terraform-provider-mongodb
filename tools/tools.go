@@ -1,4 +1,4 @@
-// Copyright (c) HashiCorp, Inc.
+// Copyright (c) 01Joseph-Hwang10
 // SPDX-License-Identifier: MPL-2.0
 
 //go:build tools
