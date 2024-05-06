@@ -1,0 +1,6 @@
+provider_installation {
+  dev_overrides {
+    "01Joseph-Hwang10/mongodb" = "<your-local-directory-having-terraform-provider-mongodb>"
+  }
+  direct {}
+}
