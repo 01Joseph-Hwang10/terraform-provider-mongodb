@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2024-05-08
+
+### ⚙️ Miscellaneous Tasks
+
+- Fix github actions ([00b26e6](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/00b26e6f920287bd7557e4cd2e416d5f446e76af))
+
+
+### Deps
+
+- Go mod tidy ([3139233](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/3139233da522926d04baf7dd5cbe0abd3fb672a6))
+
+
 ## [0.1.0] - 2024-05-08
 
 ### 🚀 Features
