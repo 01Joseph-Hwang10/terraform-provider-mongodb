@@ -9,6 +9,7 @@ import (
 	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
+	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -41,13 +42,24 @@ func (d *DocumentDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *DocumentDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "This data source reads a document in a collection in a database on the MongoDB server.",
+		MarkdownDescription: mdutils.FormatResourceDescription(`
+			This resource creates a single document in a collection 
+			in a database on the MongoDB server.
+		`),
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "Resource identifier. Has a value with a format of databases/<database_name>/collections/<collection_name>/documents/<document_id>.",
+				Computed: true,
+				MarkdownDescription: mdutils.FormatSchemaDescription(
+					`
+						Resource identifier.
+						
+						ID has a value with a format of the following:
+
+						%s
+					`,
+					mdutils.CodeBlock("", "databases/<database>/collections/<name>/documents/<document_id>"),
+				),
 			},
 			"database": schema.StringAttribute{
 				Required:            true,
@@ -58,12 +70,37 @@ func (d *DocumentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 				MarkdownDescription: "Name of the collection to read the document in.",
 			},
 			"document_id": schema.StringAttribute{
-				MarkdownDescription: "Document ID of the document.",
-				Required:            true,
+				MarkdownDescription: mdutils.FormatSchemaDescription(
+					`
+						Document ID of the document.
+
+						This value is a stringified MongoDB ObjectID.
+
+						In golang, you can use the following code to stringify an ObjectID:
+
+						%s
+					`,
+					mdutils.CodeBlock("go", "objectID.(primitive.ObjectID).Hex()"),
+				),
+				Required: true,
 			},
 			"document": schema.StringAttribute{
-				MarkdownDescription: "Document to insert into the collection.",
-				Computed:            true,
+				MarkdownDescription: mdutils.FormatSchemaDescription(
+					`
+						Document to insert into the collection.
+
+						The value of this attribute is a stringified JSON, 
+						with every double quote escaped with a backslash.
+						This means that the JSON string contains backslashes before every double quote.
+
+						In terraform, you'll be able to smoothly decode the JSON string by using the %s function.
+
+						%s
+					`,
+					mdutils.InlineCodeBlock("jsondecode"),
+					mdutils.CodeBlock("terraform", "decoded = jsondecode(document)"),
+				),
+				Computed: true,
 			},
 		},
 	}

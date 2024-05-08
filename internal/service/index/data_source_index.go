@@ -8,6 +8,7 @@ import (
 
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
+	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -43,12 +44,24 @@ func (d *IndexDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 func (d *IndexDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "This data source reads an index for single field in a collection in a database on the MongoDB server.",
+		MarkdownDescription: mdutils.FormatResourceDescription(`
+			This data source reads an index for single field in a collection 
+			in a database on the MongoDB server.
+		`),
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "Resource identifier. Has a value with a format of databases/<database_name>/collections/<collection_name>/indexes/<index_name>.",
+				Computed: true,
+				MarkdownDescription: mdutils.FormatSchemaDescription(
+					`
+						Resource identifier. 
+						
+						ID has a value with a format of the following: 
+						
+						%s
+					`,
+					mdutils.CodeBlock("", "databases/<database>/collections/<collection>/indexes/<index_name>"),
+				),
 			},
 			"database": schema.StringAttribute{
 				Required:            true,
@@ -64,7 +77,7 @@ func (d *IndexDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 			},
 			"field": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "Name of the field to create the index on.",
+				MarkdownDescription: "Name of the field to read the index on.",
 			},
 			"direction": schema.Int64Attribute{
 				Computed:            true,

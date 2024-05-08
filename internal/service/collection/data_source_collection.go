@@ -9,6 +9,7 @@ import (
 	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
+	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -39,13 +40,23 @@ func (d *CollectionDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *CollectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "This data source reads a single collection in a database on the MongoDB server.",
+		MarkdownDescription: mdutils.FormatResourceDescription(`
+			This resource reads a collection in a database on the MongoDB server.
+		`),
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "Resource identifier. Has a value with a format of databases/<database_name>/collections/<collection_name>.",
+				Computed: true,
+				MarkdownDescription: mdutils.FormatSchemaDescription(
+					`
+						Resource identifier.
+						
+						ID has a value with a format of the following:
+
+						%s
+					`,
+					mdutils.CodeBlock("", "databases/<database>/collections/<name>"),
+				),
 			},
 			"database": schema.StringAttribute{
 				Required:            true,

@@ -15,19 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-func CheckExistance(index *mongoclient.Index, diags *diag.Diagnostics) *mongoclient.Index {
-	exists, err := index.Exists()
-	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
-		return nil
-	}
-	if !exists {
-		diags.AddError(errornames.IndexNotFound, fmt.Sprintf("Index on field %s with direction %d not found", index.Field(), index.Direction()))
-		return nil
-	}
-	return index
-}
-
 func CreateResourceId(database basetypes.StringValue, collection basetypes.StringValue, index basetypes.StringValue) (basetypes.StringValue, error) {
 	id, err := resourceid.New(fmt.Sprintf("databases/%s/collections/%s/indexes/%s", database.ValueString(), collection.ValueString(), index.ValueString()))
 	if err != nil {
@@ -57,11 +44,22 @@ func dataSourceRead(client *mongoclient.MongoClient, data *IndexDataSourceModel)
 	}
 
 	// Check if the index exists
-	index := collection.Index(data.IndexName.String())
-	CheckExistance(index, &diags)
-	if diags.HasError() {
+	index := collection.Index(data.IndexName.ValueString())
+	spec, err := index.GetSpec()
+	if err != nil {
+		diags.AddError(errornames.MongoClientError, err.Error())
 		return diags
 	}
+	if spec == nil {
+		diags.AddError(
+			errornames.IndexNotFound,
+			fmt.Sprintf("Index %s not found", data.IndexName.ValueString()),
+		)
+		return diags
+	}
+
+	// Hydrate index information
+	index.Hydrate(spec)
 
 	// Set resource Id
 	resourceId, err := CreateResourceId(data.Database, data.Collection, data.IndexName)
@@ -172,12 +170,15 @@ func resourceDelete(client *mongoclient.MongoClient, data *IndexResourceModel) d
 
 	// If force destroy is not set, fail the deletion
 	if !data.ForceDestroy.ValueBool() {
-		diags.AddError(errornames.DeletionForbidden, "Index deletion is not allowed by default. Set force_destroy to true to delete the index.")
+		diags.AddError(
+			errornames.IndexDeletionForbidden,
+			"Index deletion is not allowed by default. Set force_destroy to true to delete the index.",
+		)
 		return diags
 	}
 
 	// Delete the index
-	index := collection.Index(data.IndexName.String())
+	index := collection.Index(data.IndexName.ValueString())
 	if err := index.Drop(); err != nil {
 		diags.AddError(errornames.MongoClientError, err.Error())
 		return diags

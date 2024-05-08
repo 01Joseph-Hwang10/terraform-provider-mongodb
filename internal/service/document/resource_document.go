@@ -10,6 +10,7 @@ import (
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
+	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -47,13 +48,30 @@ func (r *DocumentResource) Metadata(ctx context.Context, req resource.MetadataRe
 
 func (r *DocumentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "This resource creates a single document in a collection in a database on the MongoDB server.",
+		MarkdownDescription: mdutils.FormatResourceDescription(`
+			This resource creates a single document in a collection 
+			in a database on the MongoDB server.
+		`),
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "Resource identifier. Has a value with a format of databases/<database_name>/collections/<collection_name>/documents/<document_id>.",
+				Computed: true,
+				MarkdownDescription: mdutils.FormatSchemaDescription(
+					`
+						Resource identifier.
+						
+						ID has a value with a format of the following:
+
+						%s
+
+						Note that this format is used for importing the resource into Terraform state.
+						Import the resource using the following command:
+
+						%s
+					`,
+					mdutils.CodeBlock("", "databases/<database>/collections/<name>/documents/<document_id>"),
+					mdutils.CodeBlock("bash", "terraform import mongodb_database_document.<resource_name> databases/<database>/collections/<name>/documents/<document_id>"),
+				),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -80,8 +98,26 @@ func (r *DocumentResource) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 			"document": schema.StringAttribute{
-				MarkdownDescription: "Document to insert into the collection.",
-				Required:            true,
+				MarkdownDescription: mdutils.FormatSchemaDescription(
+					`
+						Document to insert into the collection.
+
+						The value of this attribute is a stringified JSON.
+						Note that you should escape every double quote in the JSON string.
+
+						In terraform, you can achieve this by simply using the 
+						%s function:
+
+						%s
+					`,
+					mdutils.InlineCodeBlock("jsonencode"),
+					mdutils.CodeBlock("terraform", `
+						document = jsonencode({
+							key = "value"
+						})
+					`),
+				),
+				Required: true,
 			},
 		},
 	}

@@ -9,6 +9,7 @@ import (
 	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
+	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -28,8 +29,8 @@ type DatabaseDataSource struct {
 
 // DatabaseDataSourceModel describes the data source data model.
 type DatabaseDataSourceModel struct {
-	Name types.String `tfsdk:"name"`
 	Id   types.String `tfsdk:"id"`
+	Name types.String `tfsdk:"name"`
 }
 
 func (d *DatabaseDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -38,17 +39,38 @@ func (d *DatabaseDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *DatabaseDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "This data source reads a single database on the MongoDB server.",
+		MarkdownDescription: mdutils.FormatResourceDescription(`
+			This resource reads a visible database on the MongoDB server.
+
+			The meaning of **visible** is that you can get the database information
+			with [listDatabases](https://www.mongodb.com/docs/manual/reference/command/listDatabases/)
+			command or [show dbs](https://www.mongodb.com/docs/mongodb-shell/reference/access-mdb-shell-help/#show-available-databases) command.
+
+			By default, mongodb automatically creates a database 
+			when you first store data in that database. 
+			(See [this MongoDB documentation](https://www.mongodb.com/docs/manual/core/databases-and-collections/#create-a-database) for more information)
+
+			So even if you once created a database before,
+			if the database is empty, this data source will fail to read the database.
+		`),
 
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed: true,
+				MarkdownDescription: mdutils.FormatSchemaDescription(
+					`
+						Resource identifier.
+						
+						ID has a value with a format of the following:
+
+						%s
+					`,
+					mdutils.CodeBlock("", "databases/<database>"),
+				),
+			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "Name of the database",
 				Required:            true,
-			},
-			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "Resource identifier. Has a value with a format of databases/<database_name>.",
 			},
 		},
 	}

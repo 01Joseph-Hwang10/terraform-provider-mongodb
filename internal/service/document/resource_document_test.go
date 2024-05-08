@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
-	stringutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string"
+	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/replace"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/provider"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/acc"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/mongolocal"
@@ -33,12 +33,12 @@ func TestAccDocumentResource_Lifecycle(t *testing.T) {
 			}
 		})
 
-		tfFormat := stringutils.ReplaceChain(
-			stringutils.Replacement("\n", ""),
-			stringutils.Replacement("\t", ""),
+		tfFormat := replace.NewChain(
+			replace.NewReplacement("\n", ""),
+			replace.NewReplacement("\t", ""),
 		)
 		compFormat := tfFormat.Copy().Extend(
-			stringutils.Replacement("\\\"", "\""),
+			replace.NewReplacement("\\\"", "\""),
 		)
 
 		firstDocument := `

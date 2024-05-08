@@ -16,6 +16,7 @@ import (
 	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
+	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/collection"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/database"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/document"
@@ -53,10 +54,26 @@ func (p *MongoProvider) Metadata(ctx context.Context, req provider.MetadataReque
 
 func (p *MongoProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: mdutils.FormatResourceDescription(
+			`
+				%s allows you to manage 
+				MongoDB databases, collections, documents, and indexes.
+			`,
+			mdutils.InlineCodeBlock("01Joseph-Hwang10/terraform-provider-mongodb"),
+		),
+
 		Attributes: map[string]schema.Attribute{
 			"uri": schema.StringAttribute{
-				MarkdownDescription: "URI to connect to the MongoDB server.",
-				Required:            true,
+				MarkdownDescription: mdutils.FormatSchemaDescription(`
+					URI to connect to the MongoDB server. 
+
+					You should include valid username and password whose roles have the necessary permissions 
+					for the operations you want to perform in the connection string. 
+					
+					Also, you should attach the options as a query string to the connection string 
+					if you want to use it
+				`),
+				Required: true,
 			},
 		},
 	}

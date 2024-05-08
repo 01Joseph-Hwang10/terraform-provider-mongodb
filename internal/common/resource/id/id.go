@@ -48,7 +48,7 @@ func New(id string) (*ResourceId, error) {
 		document = parts[2]
 	}
 	if isUnderIndex {
-		index = parts[3]
+		index = parts[2]
 	}
 
 	return &ResourceId{

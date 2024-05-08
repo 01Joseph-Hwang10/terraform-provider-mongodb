@@ -17,11 +17,11 @@ const (
 	UnexpectedResourceConfigurationType = "Unexpected Resource Configuration Type"
 
 	// Terraform Resource Configuration Errors
-	DatabaseNotEmpty     = "Database Not Empty"
-	CollectionNotEmpty   = "Collection Not Empty"
-	DeletionForbidden    = "Deletion Forbidden"
-	InvalidJSONInput     = "Invalid JSON Input"
-	InconsistentDocument = "Inconsistent Document"
+	DatabaseNotEmpty       = "Database Not Empty"
+	CollectionNotEmpty     = "Collection Not Empty"
+	IndexDeletionForbidden = "Index Deletion Forbidden"
+	InvalidJSONInput       = "Invalid JSON Input"
+	InconsistentDocument   = "Inconsistent Document"
 
 	// Internal Errors
 	UnexpectedError = "Unexpected Error"

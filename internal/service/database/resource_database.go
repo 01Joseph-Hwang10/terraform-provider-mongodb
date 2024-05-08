@@ -10,6 +10,7 @@ import (
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
+	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -46,10 +47,44 @@ func (r *DatabaseResource) Metadata(ctx context.Context, req resource.MetadataRe
 
 func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "This resource creates a single database on the MongoDB server.",
+		MarkdownDescription: mdutils.FormatResourceDescription(`
+			This resource ensures that a database is **visible** on the MongoDB server.
+
+			The meaning of **visible** is that you can get the database information
+			with [listDatabases](https://www.mongodb.com/docs/manual/reference/command/listDatabases/)
+			command or [show dbs](https://www.mongodb.com/docs/mongodb-shell/reference/access-mdb-shell-help/#show-available-databases) command.
+
+			By default, mongodb automatically creates a database 
+			when you first store data in that database. 
+			(See [this MongoDB documentation](https://www.mongodb.com/docs/manual/core/databases-and-collections/#create-a-database) for more information)
+
+			This resource fits to those cases where you want to 
+			explicitly create a database before storing data in it.
+		`),
 
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed: true,
+				MarkdownDescription: mdutils.FormatSchemaDescription(
+					`
+						Resource identifier.
+						
+						ID has a value with a format of the following:
+
+						%s
+
+						Note that this format is used for importing the resource into Terraform state.
+						Import the resource using the following command:
+
+						%s
+					`,
+					mdutils.CodeBlock("", "databases/<database>"),
+					mdutils.CodeBlock("bash", "terraform import mongodb_database.<resource_name> databases/<database>"),
+				),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "Name of the database",
 				Required:            true,
@@ -57,18 +92,18 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "Resource identifier. Has a value with a format of databases/<database_name>.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
 			"force_destroy": schema.BoolAttribute{
-				Computed:            true,
-				Optional:            true,
-				Default:             booldefault.StaticBool(false),
-				MarkdownDescription: "By default, the provider will not destroy the database if it contains any data. Set this to true to force destroy the database even if it contains data.",
+				Computed: true,
+				Optional: true,
+				Default:  booldefault.StaticBool(false),
+				MarkdownDescription: mdutils.FormatSchemaDescription(`
+					Whether to force destroy the database.
+					
+					By default, the provider will not destroy the database if it contains any data. 
+					The provider decides whether the database contains data based on the collections in the database. If the database contains any collections, the provider will not destroy the database.
+
+					Set this to true to force destroy the database even if it contains data.
+				`),
 			},
 		},
 	}

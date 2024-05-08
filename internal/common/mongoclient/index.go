@@ -100,43 +100,38 @@ func (i *Index) WithContext(ctx context.Context) *Index {
 	return i
 }
 
-func (i *Index) Exists() (bool, error) {
+func (i *Index) GetSpec() (*SanitizedIndexSpec, error) {
 	// Check if the index exists
 	specs, err := i.collection.Indexes().ListSpecifications(i.ctx)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	var spec *SanitizedIndexSpec
 	if i.name == "" {
-		spec, err = findIndexByField(i.field, i.direction, i.unique, specs)
+		// If the index name is not set, find the index by field,
+		// direction, and unique constraint
+		spec, err = i.findIndexByField(i.field, i.direction, i.unique, specs)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		if spec == nil {
-			return false, nil
+			return nil, nil
 		}
-
-		// Update the index name
-		i.name = spec.Name
 	} else {
-		spec, err = findIndexByName(i.name, specs)
+		// If the index name is set, find the index by name
+		spec, err = i.findIndexByName(i.name, specs)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		if spec == nil {
-			return false, nil
+			return nil, nil
 		}
-
-		// Update the index properties
-		i.field = spec.Field
-		i.direction = spec.Direction
-		i.unique = spec.Unique
 	}
-	return true, nil
+	return spec, nil
 }
 
-func findIndexByName(name string, specs []*mongo.IndexSpecification) (*SanitizedIndexSpec, error) {
+func (i *Index) findIndexByName(name string, specs []*mongo.IndexSpecification) (*SanitizedIndexSpec, error) {
 	for _, spec := range specs {
 		if spec.Name == name {
 			// Get field name and direction
@@ -170,7 +165,7 @@ func findIndexByName(name string, specs []*mongo.IndexSpecification) (*Sanitized
 	return nil, nil
 }
 
-func findIndexByField(field string, direction int, unique bool, specs []*mongo.IndexSpecification) (*SanitizedIndexSpec, error) {
+func (i *Index) findIndexByField(field string, direction int, unique bool, specs []*mongo.IndexSpecification) (*SanitizedIndexSpec, error) {
 	for _, spec := range specs {
 		uniqueMatches := (!unique && spec.Unique == nil) || (spec.Unique != nil && unique == *spec.Unique)
 		if uniqueMatches {
@@ -193,13 +188,29 @@ func findIndexByField(field string, direction int, unique bool, specs []*mongo.I
 	return nil, nil
 }
 
+func (i *Index) Hydrate(spec *SanitizedIndexSpec) *Index {
+	i.name = spec.Name
+	i.field = spec.Field
+	i.direction = spec.Direction
+	i.unique = spec.Unique
+	return i
+}
+
+func (i *Index) Exists() (bool, error) {
+	spec, err := i.GetSpec()
+	if err != nil {
+		return false, err
+	}
+	return spec != nil, nil
+}
+
 func (i *Index) EnsureExistance() error {
 	// Check if the index exists
-	exists, err := i.Exists()
+	spec, err := i.GetSpec()
 	if err != nil {
 		return err
 	}
-	if exists {
+	if spec != nil {
 		return nil
 	}
 

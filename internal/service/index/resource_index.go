@@ -10,6 +10,7 @@ import (
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
+	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -54,13 +55,30 @@ func (r *IndexResource) Metadata(ctx context.Context, req resource.MetadataReque
 
 func (r *IndexResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "This resource creates an index for single field in a collection in a database on the MongoDB server.",
+		MarkdownDescription: mdutils.FormatResourceDescription(`
+			This resource creates an index for single field in a collection 
+			in a database on the MongoDB server.
+		`),
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "Resource identifier. Has a value with a format of databases/<database_name>/collections/<collection_name>/indexes/<index_name>.",
+				Computed: true,
+				MarkdownDescription: mdutils.FormatSchemaDescription(
+					`
+						Resource identifier. 
+						
+						ID has a value with a format of the following: 
+						
+						%s
+
+						Note that this format is used for importing the resource into Terraform state.
+						Import the resource using the following command:
+
+						%s
+					`,
+					mdutils.CodeBlock("", "databases/<database>/collections/<collection>/indexes/<index_name>"),
+					mdutils.CodeBlock("bash", "terraform import mongodb_database_index.<resource_name> databases/<database>/collections/<collection>/indexes/<index_name>"),
+				),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -105,17 +123,24 @@ func (r *IndexResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 			"unique": schema.BoolAttribute{
 				Computed:            true,
 				Optional:            true,
-				MarkdownDescription: "If true, creates a unique index.",
+				MarkdownDescription: "If true, creates an index with unique constraint.",
 				Default:             booldefault.StaticBool(false),
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"force_destroy": schema.BoolAttribute{
-				Computed:            true,
-				Optional:            true,
-				MarkdownDescription: "By default, the provider will fail on destroying the index. Set this to true to force destroy the index.",
-				Default:             booldefault.StaticBool(false),
+				Computed: true,
+				Optional: true,
+				Default:  booldefault.StaticBool(false),
+				MarkdownDescription: mdutils.FormatSchemaDescription(`
+					Whether to force destroy the index.
+					
+					By default, the provider will not destroy the index 
+					for the sake of the safety.
+
+					Set this to true to force destroy the index.
+				`),
 			},
 		},
 	}

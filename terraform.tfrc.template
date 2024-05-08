@@ -1,5 +1,6 @@
 provider_installation {
   dev_overrides {
-    "01Joseph-Hwang10/mongodb" = "<path-to-the-provider-build-folder>"
+    # Change "{{.ProviderBuildPath}}" to the local path of the provider plugin binary
+    "01Joseph-Hwang10/mongodb" = "{{.ProviderBuildPath}}"
   }
 }

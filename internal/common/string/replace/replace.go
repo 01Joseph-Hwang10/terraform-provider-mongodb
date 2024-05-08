@@ -1,16 +1,18 @@
 // Copyright (c) 01Joseph-Hwang10
 // SPDX-License-Identifier: MPL-2.0
 
-package stringutils
+package replace
 
-import "strings"
+import (
+	"strings"
+)
 
 type replacement struct {
 	old string
 	new string
 }
 
-func Replacement(old string, new string) replacement {
+func NewReplacement(old string, new string) replacement {
 	return replacement{
 		old: old,
 		new: new,
@@ -21,7 +23,7 @@ type replaceChain struct {
 	replacements []replacement
 }
 
-func ReplaceChain(replacements ...replacement) *replaceChain {
+func NewChain(replacements ...replacement) *replaceChain {
 	return &replaceChain{
 		replacements: replacements,
 	}
