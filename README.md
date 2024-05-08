@@ -1,5 +1,8 @@
 # Terraform Provider MongoDB
 
+[![Release](https://img.shields.io/github/release/01Joseph-Hwang10/terraform-provider-mongodb.svg)](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/releases/?sort=semver "View GitHub Releases")
+[![Acceptance Tests](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/actions/workflows/test.yml/badge.svg)](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/actions/workflows/test.yml)
+
 `01Joseph-Hwang10/terraform-provider-mongodb` allows you to manage MongoDB databases, collections, documents, and indexes.
 
 ## Quick Example
