@@ -10,6 +10,9 @@ on:
   push:
     paths-ignore:
       - "README.md"
+    branches:
+      - "*"
+      - "!dependabot/**"
 
 # Testing only needs permissions to read the repository contents.
 permissions:
@@ -80,17 +83,17 @@ jobs:
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
+      - run: ./.github/workflows/setup-mongod.bash
       - run: go mod download
       - env:
           REGISTRY_HOST: registry.terraform.io
           NAMESPACE: 01Joseph-Hwang10
           PROVIDER_NAME: terraform-provider-mongodb
-        shell: bash
         run: |
           EXEC_ROOT="$(pwd)" \
             TF_ACC=1 \
             TF_ACC_PROVIDER_NAMESPACE="$NAMESPACE" \
             go test ./... \
             -v \
-            -parallel 4
+            -parallel 1
         timeout-minutes: 10
