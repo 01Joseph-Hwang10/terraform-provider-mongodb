@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	// Provider name for single configuration testing
+	// Provider name for single configuration testing.
 	ProviderName = "mongodb"
 )
 

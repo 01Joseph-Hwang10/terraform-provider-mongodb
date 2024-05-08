@@ -136,7 +136,10 @@ func (c *Collection) InsertOne(document Document) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	oid := res.InsertedID.(primitive.ObjectID)
+	oid, ok := res.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return "", errors.New("failed to convert InsertedID to ObjectID")
+	}
 	return oid.Hex(), nil
 }
 

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	// Placeholder collection name for explicit database creation
+	// Placeholder collection name for explicit database creation.
 	PlaceholderCollectionName = "__terraform_provider_mongodb"
 )
 

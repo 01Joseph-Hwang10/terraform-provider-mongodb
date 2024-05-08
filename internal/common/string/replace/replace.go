@@ -12,10 +12,10 @@ type replacement struct {
 	new string
 }
 
-func NewReplacement(old string, new string) replacement {
+func NewReplacement(oldStr string, newStr string) replacement {
 	return replacement{
-		old: old,
-		new: new,
+		old: oldStr,
+		new: newStr,
 	}
 }
 

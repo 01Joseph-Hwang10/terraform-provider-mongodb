@@ -18,7 +18,6 @@ permissions:
 jobs:
   # Ensure project builds before running testing matrix
   build:
-    if: ${{ false }}
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -36,7 +35,6 @@ jobs:
           version: latest
 
   generate:
-    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -58,7 +56,6 @@ jobs:
 
   # Run acceptance tests in a matrix with Terraform CLI versions
   test:
-    if: ${{ false }}
     name: Terraform Provider Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
@@ -85,6 +82,15 @@ jobs:
           terraform_wrapper: false
       - run: go mod download
       - env:
-          TF_ACC: "1"
-        run: go test -v -cover ./internal/
+          REGISTRY_HOST: registry.terraform.io
+          NAMESPACE: 01Joseph-Hwang10
+          PROVIDER_NAME: terraform-provider-mongodb
+        shell: bash
+        run: |
+          EXEC_ROOT="$(pwd)" \
+            TF_ACC=1 \
+            TF_ACC_PROVIDER_NAMESPACE="$NAMESPACE" \
+            go test ./... \
+            -v \
+            -parallel 4
         timeout-minutes: 10

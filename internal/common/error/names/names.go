@@ -4,25 +4,25 @@
 package errornames
 
 const (
-	// MongoDB Errors
+	// MongoDB Errors.
 	MongoClientError   = "Mongo Client Error"
 	DatabaseNotFound   = "Database Not Found"
 	CollectionNotFound = "Collection Not Found"
 	IndexNotFound      = "Index Not Found"
 	DocumentNotFound   = "Document Not Found"
 
-	// Terraform Configuration Errors
+	// Terraform Configuration Errors.
 	InvalidImportID                     = "Invalid Import ID"
 	InvalidResourceConfiguration        = "Invalid Resource Configuration"
 	UnexpectedResourceConfigurationType = "Unexpected Resource Configuration Type"
 
-	// Terraform Resource Configuration Errors
+	// Terraform Resource Configuration Errors.
 	DatabaseNotEmpty       = "Database Not Empty"
 	CollectionNotEmpty     = "Collection Not Empty"
 	IndexDeletionForbidden = "Index Deletion Forbidden"
 	InvalidJSONInput       = "Invalid JSON Input"
 	InconsistentDocument   = "Inconsistent Document"
 
-	// Internal Errors
+	// Internal Errors.
 	UnexpectedError = "Unexpected Error"
 )

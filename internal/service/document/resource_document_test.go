@@ -94,7 +94,7 @@ func TestAccDocumentResource_Lifecycle(t *testing.T) {
 						}
 
 						// Select the document ID
-						document_id := resources["mongodb_database_document.test"].(map[string]interface{})["primary"].(map[string]interface{})["attributes"].(map[string]interface{})["document_id"].(string)
+						document_id := resources["mongodb_database_document.test"].(map[string]interface{})["primary"].(map[string]interface{})["attributes"].(map[string]interface{})["document_id"].(string) //nolint:forcetypeassert
 
 						return "databases/test-database/collections/test-collection/documents/" + document_id, nil
 					},

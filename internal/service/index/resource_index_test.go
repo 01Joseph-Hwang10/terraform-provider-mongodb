@@ -56,7 +56,7 @@ func TestAccIndexResource_Lifecycle(t *testing.T) {
 							return "", err
 						}
 
-						index_name := resources["mongodb_database_index.test"].(map[string]interface{})["primary"].(map[string]interface{})["attributes"].(map[string]interface{})["index_name"].(string)
+						index_name := resources["mongodb_database_index.test"].(map[string]interface{})["primary"].(map[string]interface{})["attributes"].(map[string]interface{})["index_name"].(string) //nolint:forcetypeassert
 						return "databases/test-database/collections/test-collection/indexes/" + index_name, nil
 					},
 					ImportState:             true,
@@ -125,7 +125,7 @@ func TestAccIndexResource_Variant(t *testing.T) {
 							return "", err
 						}
 
-						index_name := resources["mongodb_database_index.test"].(map[string]interface{})["primary"].(map[string]interface{})["attributes"].(map[string]interface{})["index_name"].(string)
+						index_name := resources["mongodb_database_index.test"].(map[string]interface{})["primary"].(map[string]interface{})["attributes"].(map[string]interface{})["index_name"].(string) //nolint:forcetypeassert
 						return "databases/test-database/collections/test-collection/indexes/" + index_name, nil
 					},
 					ImportState:             true,
