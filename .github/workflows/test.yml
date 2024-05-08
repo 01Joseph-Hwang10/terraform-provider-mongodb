@@ -26,7 +26,7 @@ jobs:
     steps:
       - id: decide-run
         run: |
-          if [[ ${{ github.head_ref }} == *"dependabot"* ]]; then
+          if [[ "${{ github.head_ref }}" == *"dependabot"* ]]; then
              echo "run=false" >> $GITHUB_OUTPUT
           else
              echo "run=true" >> $GITHUB_OUTPUT  
