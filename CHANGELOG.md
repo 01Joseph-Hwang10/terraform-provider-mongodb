@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 📚 Documentation
+
+- Update docs [no ci] ([8c1d6e5](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/8c1d6e5c958615e6c1ccb19cb63a779fa0184fad))
+
+- Update readme [no ci] ([f8d52b1](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/f8d52b131cbee4321aadef4c6bd8d6567f30937d))
+
+
+## [0.1.3] - 2024-05-08
+
+### 📚 Documentation
+
+- Fix docs ([69d3a9c](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/69d3a9c58476958487b135911286ab1779a90cf8))
+
+
+### ⚙️ Miscellaneous Tasks
+
+- Use add and commit action [no ci] ([27a4572](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/27a45724af8cb25279db087ac4e794934cb63794))
+
+
+## [0.1.2] - 2024-05-08
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog & fix ci script [no ci] ([aa9aa92](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/aa9aa92ae0090cdadfb5c5585d62c32f8a4dacaa))
+
+- Change gpg key pairs ([7f8f473](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/7f8f473edaf15b0eed73f0767ff87f03aeb12781))
+
+
 ## [0.1.1] - 2024-05-08
 
 ### ⚙️ Miscellaneous Tasks
