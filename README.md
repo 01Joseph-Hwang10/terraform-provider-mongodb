@@ -50,7 +50,7 @@ Finally, run `terraform apply` to create the database, collection, and document 
 
 ## API Documentation
 
-See the [API Documentation](./docs/index.md) for more information.
+See [the documentation](https://registry.terraform.io/providers/01Joseph-Hwang10/mongodb/latest/docs) for more information.
 
 ## Contributing
 

@@ -1,6 +1,19 @@
 resource "github_repository" "terraform_provider_mongodb" {
-  name            = "terraform-provider-mongodb"
-  visibility      = "public"
+  name         = "terraform-provider-mongodb"
+  description  = "Manage MongoDB databases, collections, documents, and indexes using Terraform"
+  homepage_url = "https://registry.terraform.io/providers/01Joseph-Hwang10/mongodb/latest"
+  topics = [
+    "terraform",
+    "terraform-provider",
+    "mongodb",
+    "database",
+    "collection",
+    "document",
+    "index",
+  ]
+
+  visibility = "public"
+
   has_downloads   = true
   has_issues      = true
   has_projects    = true
