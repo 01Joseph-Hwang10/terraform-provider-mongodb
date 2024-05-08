@@ -111,11 +111,7 @@ func (r *DocumentResource) Schema(ctx context.Context, req resource.SchemaReques
 						%s
 					`,
 					mdutils.InlineCodeBlock("jsonencode"),
-					mdutils.CodeBlock("terraform", `
-						document = jsonencode({
-							key = "value"
-						})
-					`),
+					mdutils.CodeBlock("terraform", "document = jsonencode({ key = \"value\" })"),
 				),
 				Required: true,
 			},

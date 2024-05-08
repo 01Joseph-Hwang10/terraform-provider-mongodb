@@ -43,9 +43,9 @@ resource "mongodb_database_document" "first_user" {
 
 - `collection` (String) Name of the collection to create the document in.
 - `database` (String) Name of the database to create the collection in.
-- `document` (String) <p>Document to insert into the collection.</p>  <p>The value of this attribute is a stringified JSON. Note that you should escape every double quote in the JSON string.</p>  <p>In terraform, you can achieve this by simply using the <code>jsonencode</code> function:</p>  <pre><code class="language-terraform">document = jsonencode({<br />  key = &#34;value&#34;<br />})</code></pre>
+- `document` (String) <p>Document to insert into the collection.</p>  <p>The value of this attribute is a stringified JSON. Note that you should escape every double quote in the JSON string.</p>  <p>In terraform, you can achieve this by simply using the <code>jsonencode</code> function:</p>  <pre><code class="language-terraform">document = jsonencode({ key = "value" })</code></pre>
 
 ### Read-Only
 
 - `document_id` (String) Document ID of the document.
-- `id` (String) <p>Resource identifier.</p>  <p>ID has a value with a format of the following:</p>  <pre><code class="">databases/&lt;database&gt;/collections/&lt;name&gt;/documents/&lt;document_id&gt;</code></pre>  <p>Note that this format is used for importing the resource into Terraform state. Import the resource using the following command:</p>  <pre><code class="language-bash">terraform import mongodb_database_document.&lt;resource_name&gt; databases/&lt;database&gt;/collections/&lt;name&gt;/documents/&lt;document_id&gt;</code></pre>
+- `id` (String) <p>Resource identifier.</p>  <p>ID has a value with a format of the following:</p>  <pre><code class="">databases/<database>/collections/<name>/documents/<document_id></code></pre>  <p>Note that this format is used for importing the resource into Terraform state. Import the resource using the following command:</p>  <pre><code class="language-bash">terraform import mongodb_database_document.<resource_name> databases/<database>/collections/<name>/documents/<document_id></code></pre>

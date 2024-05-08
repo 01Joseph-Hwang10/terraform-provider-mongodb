@@ -5,7 +5,6 @@ package mdutils
 
 import (
 	"fmt"
-	"html"
 	"strings"
 
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/indent"
@@ -29,11 +28,15 @@ func FormatSchemaDescription(description string, args ...any) string {
 	return description
 }
 
+// CodeBlock returns a markdown code block.
+//
+// Note that it expects the code to be a single line
+// if it is used in list entry.
+//
+// TODO: Add support for multi-line code in list entry.
 func CodeBlock(language string, code string) string {
 	code = indent.Sanitize(code, indent.ProjectTabSize)
 	code = strings.Trim(code, "\n")
-	code = html.EscapeString(code)
-	code = strings.ReplaceAll(code, "\n", "<br />")
 
 	langClass := ""
 	if language != "" {
@@ -48,8 +51,5 @@ func CodeBlock(language string, code string) string {
 }
 
 func InlineCodeBlock(code string) string {
-	return fmt.Sprintf(
-		"<code>%s</code>",
-		html.EscapeString(code),
-	)
+	return fmt.Sprintf("<code>%s</code>", code)
 }

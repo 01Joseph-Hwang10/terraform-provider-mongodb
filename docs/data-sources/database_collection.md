@@ -33,4 +33,4 @@ data "mongodb_database_collection" "users" {
 
 ### Read-Only
 
-- `id` (String) <p>Resource identifier.</p>  <p>ID has a value with a format of the following:</p>  <pre><code class="">databases/&lt;database&gt;/collections/&lt;name&gt;</code></pre>
+- `id` (String) <p>Resource identifier.</p>  <p>ID has a value with a format of the following:</p>  <pre><code class="">databases/<database>/collections/<name></code></pre>

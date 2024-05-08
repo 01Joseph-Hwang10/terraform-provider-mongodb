@@ -50,4 +50,4 @@ resource "local_file" "first_user_document" {
 ### Read-Only
 
 - `document` (String) <p>Document to insert into the collection.</p>  <p>The value of this attribute is a stringified JSON, with every double quote escaped with a backslash. This means that the JSON string contains backslashes before every double quote.</p>  <p>In terraform, you&rsquo;ll be able to smoothly decode the JSON string by using the <code>jsondecode</code> function.</p>  <pre><code class="language-terraform">decoded = jsondecode(document)</code></pre>
-- `id` (String) <p>Resource identifier.</p>  <p>ID has a value with a format of the following:</p>  <pre><code class="">databases/&lt;database&gt;/collections/&lt;name&gt;/documents/&lt;document_id&gt;</code></pre>
+- `id` (String) <p>Resource identifier.</p>  <p>ID has a value with a format of the following:</p>  <pre><code class="">databases/<database>/collections/<name>/documents/<document_id></code></pre>

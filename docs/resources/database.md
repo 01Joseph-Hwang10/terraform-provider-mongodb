@@ -51,4 +51,4 @@ resource "mongodb_database" "default" {
 
 ### Read-Only
 
-- `id` (String) <p>Resource identifier.</p>  <p>ID has a value with a format of the following:</p>  <pre><code class="">databases/&lt;database&gt;</code></pre>  <p>Note that this format is used for importing the resource into Terraform state. Import the resource using the following command:</p>  <pre><code class="language-bash">terraform import mongodb_database.&lt;resource_name&gt; databases/&lt;database&gt;</code></pre>
+- `id` (String) <p>Resource identifier.</p>  <p>ID has a value with a format of the following:</p>  <pre><code class="">databases/<database></code></pre>  <p>Note that this format is used for importing the resource into Terraform state. Import the resource using the following command:</p>  <pre><code class="language-bash">terraform import mongodb_database.<resource_name> databases/<database></code></pre>

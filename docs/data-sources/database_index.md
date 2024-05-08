@@ -47,5 +47,5 @@ data "mongodb_database_index" "user_age_index" {
 
 - `direction` (Number) Direction of the index. 1 for ascending, -1 for descending.
 - `field` (String) Name of the field to read the index on.
-- `id` (String) <p>Resource identifier.</p>  <p>ID has a value with a format of the following:</p>  <pre><code class="">databases/&lt;database&gt;/collections/&lt;collection&gt;/indexes/&lt;index_name&gt;</code></pre>
+- `id` (String) <p>Resource identifier.</p>  <p>ID has a value with a format of the following:</p>  <pre><code class="">databases/<database>/collections/<collection>/indexes/<index_name></code></pre>
 - `unique` (Boolean) If true, this index has a unique constraint.
