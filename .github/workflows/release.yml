@@ -48,14 +48,10 @@ jobs:
         env:
           OUTPUT: CHANGELOG.md
 
-      - name: Apply changes
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
-          git config --global pull.rebase false
-          git pull origin main
-
-          git add CHANGELOG.md
-          git commit -m "chore: Update CHANGELOG.md"
-          git push origin main
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: github-actions[bot]
+          author_email: github-actions[bot]@users.noreply.github.com
+          message: "chore: Update CHANGELOG.md"
+          add: "CHANGELOG.md"
