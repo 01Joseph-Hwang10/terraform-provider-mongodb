@@ -6,8 +6,9 @@ package index
 import (
 	"fmt"
 
+	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
-	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resourceutils"
+	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/collection"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/database"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -17,22 +18,67 @@ import (
 func CheckExistance(index *mongoclient.Index, diags *diag.Diagnostics) *mongoclient.Index {
 	exists, err := index.Exists()
 	if err != nil {
-		diags.AddError("Client Error", err.Error())
+		diags.AddError(errornames.MongoClientError, err.Error())
 		return nil
 	}
 	if !exists {
-		diags.AddError("Index not found", fmt.Sprintf("Index on field %s with direction %d not found", index.Field(), index.Direction()))
+		diags.AddError(errornames.IndexNotFound, fmt.Sprintf("Index on field %s with direction %d not found", index.Field(), index.Direction()))
 		return nil
 	}
 	return index
 }
 
 func CreateResourceId(database basetypes.StringValue, collection basetypes.StringValue, index basetypes.StringValue) (basetypes.StringValue, error) {
-	id, err := resourceutils.NewId(fmt.Sprintf("databases/%s/collections/%s/indexes/%s", database.ValueString(), collection.ValueString(), index.ValueString()))
+	id, err := resourceid.New(fmt.Sprintf("databases/%s/collections/%s/indexes/%s", database.ValueString(), collection.ValueString(), index.ValueString()))
 	if err != nil {
 		return basetypes.NewStringNull(), err
 	}
 	return id.TerraformString(), nil
+}
+
+func dataSourceRead(client *mongoclient.MongoClient, data *IndexDataSourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	if !client.IsConnected() {
+		diags.AddError(errornames.MongoClientError, "Client is not connected")
+		return diags
+	}
+
+	// Check if the database exists
+	database := database.CheckExistance(client, data.Database.ValueString(), &diags)
+	if diags.HasError() {
+		return diags
+	}
+
+	// Check if the collection exists
+	collection := collection.CheckExistance(database, data.Collection.ValueString(), &diags)
+	if diags.HasError() {
+		return diags
+	}
+
+	// Check if the index exists
+	index := collection.Index(data.IndexName.String())
+	CheckExistance(index, &diags)
+	if diags.HasError() {
+		return diags
+	}
+
+	// Set resource Id
+	resourceId, err := CreateResourceId(data.Database, data.Collection, data.IndexName)
+	if err != nil {
+		diags.AddError(errornames.InvalidResourceConfiguration, err.Error())
+		return diags
+	}
+
+	data.Id = resourceId
+	data.Collection = basetypes.NewStringValue(index.Collection().Name())
+	data.Database = basetypes.NewStringValue(index.Database().Name())
+	data.IndexName = basetypes.NewStringValue(index.Name())
+	data.Field = basetypes.NewStringValue(index.Field())
+	data.Direction = basetypes.NewInt64Value(int64(index.Direction()))
+	data.Unique = basetypes.NewBoolValue(index.Unique())
+
+	return diags
 }
 
 func resourceRead(client *mongoclient.MongoClient, data *IndexResourceModel) diag.Diagnostics {
@@ -62,13 +108,8 @@ func resourceRead(client *mongoclient.MongoClient, data *IndexResourceModel) dia
 	return diags
 }
 
-func dataSourceRead(client *mongoclient.MongoClient, data *IndexDataSourceModel) diag.Diagnostics {
+func resourceCreate(client *mongoclient.MongoClient, data *IndexResourceModel) diag.Diagnostics {
 	var diags diag.Diagnostics
-
-	if !client.IsConnected() {
-		diags.AddError("Client Error", "Client is not connected")
-		return diags
-	}
 
 	// Check if the database exists
 	database := database.CheckExistance(client, data.Database.ValueString(), &diags)
@@ -82,27 +123,65 @@ func dataSourceRead(client *mongoclient.MongoClient, data *IndexDataSourceModel)
 		return diags
 	}
 
-	// Check if the index exists
-	index := collection.Index(data.IndexName.String())
-	CheckExistance(index, &diags)
+	// Create the index
+	index := collection.IndexFromField(data.Field.ValueString(), int(data.Direction.ValueInt64()), data.Unique.ValueBool())
+	if err := index.EnsureExistance(); err != nil {
+		diags.AddError(errornames.MongoClientError, err.Error())
+		return diags
+	}
+
+	// Set index name
+	data.IndexName = basetypes.NewStringValue(index.Name())
+
+	// Perform read operation
+	diags.Append(resourceRead(client, data)...)
 	if diags.HasError() {
 		return diags
 	}
 
-	// Set resource Id
-	resourceId, err := CreateResourceId(data.Database, data.Collection, data.IndexName)
+	return diags
+}
+
+func resourceDelete(client *mongoclient.MongoClient, data *IndexResourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// Check if the database exists
+	database := client.Database(data.Database.ValueString())
+	exists, err := database.Exists()
 	if err != nil {
-		diags.AddError("Invalid configuration", err.Error())
+		diags.AddError(errornames.MongoClientError, err.Error())
+		return diags
+	}
+	if !exists {
+		// We don't need to check if the collection exists,
+		// as the database doesn't exist
 		return diags
 	}
 
-	data.Id = resourceId
-	data.Collection = basetypes.NewStringValue(index.Collection().Name())
-	data.Database = basetypes.NewStringValue(index.Database().Name())
-	data.IndexName = basetypes.NewStringValue(index.Name())
-	data.Field = basetypes.NewStringValue(index.Field())
-	data.Direction = basetypes.NewInt64Value(int64(index.Direction()))
-	data.Unique = basetypes.NewBoolValue(index.Unique())
+	// Check if the collection exists
+	collection := database.Collection(data.Collection.ValueString())
+	exists, err = collection.Exists()
+	if err != nil {
+		diags.AddError(errornames.MongoClientError, err.Error())
+		return diags
+	}
+	if !exists {
+		// Collection doesn't exist, nothing to delete
+		return diags
+	}
+
+	// If force destroy is not set, fail the deletion
+	if !data.ForceDestroy.ValueBool() {
+		diags.AddError(errornames.DeletionForbidden, "Index deletion is not allowed by default. Set force_destroy to true to delete the index.")
+		return diags
+	}
+
+	// Delete the index
+	index := collection.Index(data.IndexName.String())
+	if err := index.Drop(); err != nil {
+		diags.AddError(errornames.MongoClientError, err.Error())
+		return diags
+	}
 
 	return diags
 }

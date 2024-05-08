@@ -4,37 +4,35 @@
 package document_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
+	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/acc"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/mongolocal"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func TestAccDocumentDataSource(t *testing.T) {
-	mongolocal.WithMongoLocal(t, func(server *mongolocal.MongoLocal) {
-		// Create document for testing
-		client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(server.URI()))
-		if err != nil {
-			t.Fatalf("failed to connect to MongoDB: %s", err)
-			return
-		}
-		defer client.Disconnect(context.Background())
+	t.Parallel()
+	mongolocal.RunWithServer(t, func(server *mongolocal.MongoLocal) {
+		logger := server.Logger()
 
-		collection := client.Database("test-database").Collection("test-collection")
-		res, err := collection.InsertOne(context.Background(), map[string]interface{}{
-			"name": "test-document",
+		var oid string
+		mongoclient.FromURI(server.URI()).Run(func(client *mongoclient.MongoClient, err error) {
+			if err != nil {
+				logger.Sugar().Fatalf("failed to create a client: %v", err)
+			}
+
+			logger.Info("creating a document to test document data source")
+
+			oid, err = client.Database("test-database").Collection("test-collection").InsertOne(mongoclient.Document{"key": "value"})
+			if err != nil {
+				logger.Sugar().Fatalf("failed to insert a document: %v", err)
+			}
 		})
-		if err != nil {
-			t.Fatalf("failed to insert document: %s", err)
-			return
-		}
-		oid := res.InsertedID.(primitive.ObjectID).Hex()
+
+		logger.Info("running the test...")
 
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { acc.TestAccPreCheck(t) },

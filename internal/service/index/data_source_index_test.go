@@ -17,7 +17,7 @@ import (
 )
 
 func TestAccIndexDataSource(t *testing.T) {
-	mongolocal.WithMongoLocal(t, func(server *mongolocal.MongoLocal) {
+	mongolocal.RunWithServer(t, func(server *mongolocal.MongoLocal) {
 		// Create collection index for testing
 		client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(server.URI()))
 		if err != nil {

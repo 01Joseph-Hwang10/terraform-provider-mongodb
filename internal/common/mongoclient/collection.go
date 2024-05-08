@@ -5,6 +5,7 @@ package mongoclient
 
 import (
 	"context"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -92,19 +93,36 @@ func (c *Collection) IsEmpty() (bool, error) {
 	return count == 0, nil
 }
 
-func (c *Collection) FindById(id string) (interface{}, error) {
+type FindByIdOptions struct {
+	IncludeId bool
+}
+
+func (c *Collection) FindById(id string, opts *FindByIdOptions) (Document, error) {
+	// Convert the id to an ObjectID
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
-	var document interface{}
+
+	// Retrieve the document
+	var document Document
 	if err := c.collection.FindOne(c.ctx, bson.M{"_id": oid}).Decode(&document); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		}
 		return nil, err
 	}
+
+	// If opts.IncludeId is not true, exclude the id from the document
+	includeId := opts != nil && opts.IncludeId
+	if !includeId {
+		delete(document, "_id")
+	}
+
 	return document, nil
 }
 
-func (c *Collection) InsertOne(document interface{}) (string, error) {
+func (c *Collection) InsertOne(document Document) (string, error) {
 	res, err := c.collection.InsertOne(c.ctx, document)
 	if err != nil {
 		return "", err
@@ -113,7 +131,7 @@ func (c *Collection) InsertOne(document interface{}) (string, error) {
 	return oid.Hex(), nil
 }
 
-func (c *Collection) UpdateByID(id string, update interface{}) error {
+func (c *Collection) UpdateByID(id string, update Document) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err

@@ -4,31 +4,32 @@
 package collection_test
 
 import (
-	"context"
 	"testing"
 
+	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/acc"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/mongolocal"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func TestAccCollectionDataSource(t *testing.T) {
-	mongolocal.WithMongoLocal(t, func(server *mongolocal.MongoLocal) {
-		// Create collection for testing
-		client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(server.URI()))
-		if err != nil {
-			t.Fatalf("failed to connect to MongoDB: %s", err)
-			return
-		}
-		defer client.Disconnect(context.Background())
+	t.Parallel()
+	mongolocal.RunWithServer(t, func(server *mongolocal.MongoLocal) {
+		logger := server.Logger()
 
-		database := client.Database("test-database")
-		if err := database.CreateCollection(context.Background(), "test-collection"); err != nil {
-			t.Fatalf("failed to create collection: %s", err)
-			return
-		}
+		mongoclient.FromURI(server.URI()).Run(func(client *mongoclient.MongoClient, err error) {
+			if err != nil {
+				logger.Sugar().Fatalf("failed to create a client: %v", err)
+			}
+
+			logger.Info("creating a database and a collection to test the collection resource")
+			database := client.Database("test-database")
+			if err := database.Collection("test-collection").EnsureExistance(); err != nil {
+				logger.Sugar().Fatalf("failed to create a collection: %v", err)
+			}
+		})
+
+		logger.Info("running the test...")
 
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { acc.TestAccPreCheck(t) },

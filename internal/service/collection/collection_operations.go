@@ -6,8 +6,9 @@ package collection
 import (
 	"fmt"
 
+	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
-	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resourceutils"
+	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/database"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
@@ -17,18 +18,18 @@ func CheckExistance(database *mongoclient.Database, name string, diags *diag.Dia
 	collection := database.Collection(name)
 	exists, err := database.Exists()
 	if err != nil {
-		diags.AddError("Client Error", err.Error())
+		diags.AddError(errornames.MongoClientError, err.Error())
 		return nil
 	}
 	if !exists {
-		diags.AddError("Collection Not Found", fmt.Sprintf("Collection %s not found", name))
+		diags.AddError(errornames.CollectionNotFound, fmt.Sprintf("Collection %s not found", name))
 		return nil
 	}
 	return collection
 }
 
 func CreateResourceId(database basetypes.StringValue, name basetypes.StringValue) (basetypes.StringValue, error) {
-	id, err := resourceutils.NewId(fmt.Sprintf("databases/%s/collections/%s", database.ValueString(), name.ValueString()))
+	id, err := resourceid.New(fmt.Sprintf("databases/%s/collections/%s", database.ValueString(), name.ValueString()))
 	if err != nil {
 		return basetypes.NewStringNull(), err
 	}
@@ -53,7 +54,7 @@ func dataSourceRead(client *mongoclient.MongoClient, data *CollectionDataSourceM
 	// Set resource Id
 	resourceId, err := CreateResourceId(data.Database, data.Name)
 	if err != nil {
-		diags.AddError("Invalid configuration", err.Error())
+		diags.AddError(errornames.InvalidResourceConfiguration, err.Error())
 		return diags
 	}
 	data.Id = resourceId
@@ -76,6 +77,79 @@ func resourceRead(client *mongoclient.MongoClient, data *CollectionResourceModel
 	data.Id = d.Id
 	data.Name = d.Name
 	data.Database = d.Database
+
+	return diags
+}
+
+func resourceCreate(client *mongoclient.MongoClient, data *CollectionResourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// Check if the database exists
+	database := database.CheckExistance(client, data.Database.ValueString(), &diags)
+	if diags.HasError() {
+		return diags
+	}
+
+	// Create the collection
+	collection := database.Collection(data.Name.ValueString())
+	if err := collection.EnsureExistance(); err != nil {
+		diags.AddError(errornames.MongoClientError, err.Error())
+		return diags
+	}
+
+	// Perform the read operation
+	diags.Append(resourceRead(client, data)...)
+	if diags.HasError() {
+		return diags
+	}
+
+	return diags
+}
+
+func resourceDelete(client *mongoclient.MongoClient, data *CollectionResourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// Check if the database exists
+	database := client.Database(data.Database.ValueString())
+	exists, err := database.Exists()
+	if err != nil {
+		diags.AddError(errornames.MongoClientError, err.Error())
+		return diags
+	}
+	if !exists {
+		// We don't need to check if the collection exists,
+		// as the database doesn't exist
+		return diags
+	}
+
+	// Check if the collection exists
+	collection := database.Collection(data.Name.ValueString())
+	exists, err = collection.Exists()
+	if err != nil {
+		diags.AddError(errornames.MongoClientError, err.Error())
+		return diags
+	}
+	if !exists {
+		// Collection doesn't exist, nothing to delete
+		return diags
+	}
+
+	// Check if the collection is empty
+	isEmpty, err := collection.IsEmpty()
+	if err != nil {
+		diags.AddError(errornames.MongoClientError, err.Error())
+		return diags
+	}
+	if !isEmpty && !data.ForceDestroy.ValueBool() {
+		diags.AddError(errornames.CollectionNotEmpty, "Collection contains data. Set force_destroy to true to delete the collection.")
+		return diags
+	}
+
+	// Delete the collection
+	if err := collection.Drop(); err != nil {
+		diags.AddError(errornames.MongoClientError, err.Error())
+		return diags
+	}
 
 	return diags
 }

@@ -5,13 +5,11 @@ package document
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
+	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
-	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resourceutils"
-	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/collection"
-	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/database"
+	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
+	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -19,7 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -32,7 +29,7 @@ func NewDocumentResource() resource.Resource {
 
 // DocumentResource defines the resource implementation.
 type DocumentResource struct {
-	client *mongoclient.MongoClient
+	config *resourceconfig.ResourceConfig
 }
 
 // DocumentResourceModel describes the resource data model.
@@ -61,16 +58,16 @@ func (r *DocumentResource) Schema(ctx context.Context, req resource.SchemaReques
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"collection": schema.StringAttribute{
+			"database": schema.StringAttribute{
 				Required:            true,
-				MarkdownDescription: "Name of the collection to create the document in.",
+				MarkdownDescription: "Name of the database to create the collection in.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"database": schema.StringAttribute{
+			"collection": schema.StringAttribute{
 				Required:            true,
-				MarkdownDescription: "Name of the database to create the collection in.",
+				MarkdownDescription: "Name of the collection to create the document in.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -91,216 +88,132 @@ func (r *DocumentResource) Schema(ctx context.Context, req resource.SchemaReques
 }
 
 func (r *DocumentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
-	if req.ProviderData == nil {
+	config, diags := resourceconfig.FromProviderData(req.ProviderData)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	client, ok := req.ProviderData.(*mongoclient.MongoClient)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *mongoclient.MongoClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	r.client = client
+	r.config = config
 }
 
 func (r *DocumentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data DocumentResourceModel
+	client := r.config.Client.WithContext(ctx)
+	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
+		var data DocumentResourceModel
 
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		// Read Terraform plan data into the model
+		resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Connect to the MongoDB server
-	if err := r.client.WithContext(ctx).Connect(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	defer r.client.Disconnect()
+		// Perform create operation
+		resp.Diagnostics.Append(resourceCreate(client, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Check if the database exists
-	database := database.CheckExistance(r.client, data.Database.ValueString(), &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Check if the collection exists
-	collection := collection.CheckExistance(database, data.Collection.ValueString(), &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Create the document
-	var document interface{}
-	if err := json.Unmarshal([]byte(data.Document.ValueString()), &document); err != nil {
-		resp.Diagnostics.AddError("Invalid JSON Input", err.Error())
-		return
-	}
-	oid, err := collection.InsertOne(document)
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-
-	data.DocumentId = basetypes.NewStringValue(oid)
-
-	// Perform a read operation to get the document
-	resp.Diagnostics.Append(resourceRead(r.client, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		// Save data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	})
 }
 
 func (r *DocumentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data DocumentResourceModel
+	client := r.config.Client.WithContext(ctx)
+	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
 
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		var data DocumentResourceModel
 
-	// Connect to the MongoDB server
-	if err := r.client.WithContext(ctx).Connect(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	defer r.client.Disconnect()
+		// Read Terraform prior state data into the model
+		resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Perform read operation
-	resp.Diagnostics.Append(resourceRead(r.client, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		// Perform read operation
+		resp.Diagnostics.Append(resourceRead(client, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		// Save updated data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	})
 }
 
 func (r *DocumentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data DocumentResourceModel
+	client := r.config.Client.WithContext(ctx)
+	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
 
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		var data DocumentResourceModel
 
-	// Connect to the MongoDB server
-	if err := r.client.WithContext(ctx).Connect(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	defer r.client.Disconnect()
+		// Read Terraform plan data into the model
+		resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Check if the database exists
-	database := database.CheckExistance(r.client, data.Database.ValueString(), &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		// Perform the update operation
+		resp.Diagnostics.Append(resourceUpdate(client, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Check if the collection exists
-	collection := collection.CheckExistance(database, data.Collection.ValueString(), &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Update the document
-	var document interface{}
-	if err := json.Unmarshal([]byte(data.Document.ValueString()), &document); err != nil {
-		resp.Diagnostics.AddError("Invalid JSON Input", err.Error())
-		return
-	}
-	if err := collection.UpdateByID(data.DocumentId.ValueString(), document); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-
-	// Perform a read operation to get the document
-	resp.Diagnostics.Append(resourceRead(r.client, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		// Save updated data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	})
 }
 
 func (r *DocumentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data DocumentResourceModel
+	client := r.config.Client.WithContext(ctx)
+	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
 
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		var data DocumentResourceModel
 
-	// Connect to the MongoDB server
-	if err := r.client.WithContext(ctx).Connect(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	defer r.client.Disconnect()
+		// Read Terraform prior state data into the model
+		resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Check if the database exists
-	database := r.client.Database(data.Database.ValueString())
-	exists, err := database.Exists()
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	if !exists {
-		// We don't need to check if the collection exists,
-		// as the database doesn't exist
-		return
-	}
-
-	// Check if the collection exists
-	collection := database.Collection(data.Collection.ValueString())
-	exists, err = collection.Exists()
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	if !exists {
-		// Collection doesn't exist, nothing to delete
-		return
-	}
-
-	// Delete the document
-	if err := collection.DeleteByID(data.DocumentId.ValueString()); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
+		// Perform the delete operation
+		resp.Diagnostics.Append(resourceDelete(client, &data)...)
+	})
 }
 
 func (r *DocumentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	id, err := resourceutils.NewId(req.ID)
+	id, err := resourceid.New(req.ID)
 	if err != nil {
-		resp.Diagnostics.AddError("Invalid Import ID", err.Error())
+		resp.Diagnostics.AddError(errornames.InvalidImportID, err.Error())
 		return
 	}
 	if id.Database() == "" {
-		resp.Diagnostics.AddError("Invalid Import ID", "Database name is required")
+		resp.Diagnostics.AddError(errornames.InvalidImportID, "Database name is required")
 		return
 	}
 	if id.Collection() == "" {
-		resp.Diagnostics.AddError("Invalid Import ID", "Collection name is required")
+		resp.Diagnostics.AddError(errornames.InvalidImportID, "Collection name is required")
 		return
 	}
 	if id.Document() == "" {
-		resp.Diagnostics.AddError("Invalid Import ID", "Document ID is required")
+		resp.Diagnostics.AddError(errornames.InvalidImportID, "Document ID is required")
 		return
 	}
 

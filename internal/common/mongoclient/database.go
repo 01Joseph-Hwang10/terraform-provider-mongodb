@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	// Dummy collection name for explicit database creation
-	dummyCollectionName = "__terraform_provider_mongodb"
+	// Placeholder collection name for explicit database creation
+	PlaceholderCollectionName = "__terraform_provider_mongodb"
 )
 
 type Database struct {
@@ -60,12 +60,7 @@ func (d *Database) EnsureExistance() error {
 	}
 
 	// Create a dummy collection to ensure the database is created
-	if err := d.database.CreateCollection(d.ctx, dummyCollectionName); err != nil {
-		return err
-	}
-
-	// Drop the dummy collection
-	if err := d.database.Collection(dummyCollectionName).Drop(d.ctx); err != nil {
+	if err := d.database.CreateCollection(d.ctx, PlaceholderCollectionName); err != nil {
 		return err
 	}
 
@@ -86,7 +81,7 @@ func (d *Database) Drop() error {
 }
 
 func (d *Database) IsEmpty() (bool, error) {
-	collections, err := d.database.ListCollectionNames(d.ctx, bson.M{})
+	collections, err := d.database.ListCollectionNames(d.ctx, bson.M{"name": bson.M{"$ne": PlaceholderCollectionName}})
 	if err != nil {
 		return false, err
 	}

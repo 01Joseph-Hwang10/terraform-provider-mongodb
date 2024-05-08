@@ -5,9 +5,10 @@ package database
 
 import (
 	"context"
-	"fmt"
 
+	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
+	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -22,7 +23,7 @@ func NewDatabaseDataSource() datasource.DataSource {
 
 // DatabaseDataSource defines the data source implementation.
 type DatabaseDataSource struct {
-	client *mongoclient.MongoClient
+	config *resourceconfig.ResourceConfig
 }
 
 // DatabaseDataSourceModel describes the data source data model.
@@ -54,47 +55,38 @@ func (d *DatabaseDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 }
 
 func (d *DatabaseDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
-	if req.ProviderData == nil {
+	config, diags := resourceconfig.FromProviderData(req.ProviderData)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	client, ok := req.ProviderData.(*mongoclient.MongoClient)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *mongoclient.MongoClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	d.client = client
+	d.config = config
 }
 
 func (d *DatabaseDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data DatabaseDataSourceModel
+	client := d.config.Client.WithContext(ctx)
+	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
 
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		var data DatabaseDataSourceModel
 
-	// Connect to the MongoDB server
-	if err := d.client.WithContext(ctx).Connect(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	defer d.client.Disconnect()
+		// Read Terraform prior state data into the model
+		resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Perform data source read operation
-	resp.Diagnostics.Append(dataSourceRead(d.client, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		// Perform data source read operation
+		resp.Diagnostics.Append(dataSourceRead(client, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		// Save updated data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	})
 }

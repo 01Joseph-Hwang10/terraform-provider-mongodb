@@ -5,10 +5,11 @@ package database
 
 import (
 	"context"
-	"fmt"
 
+	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
-	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resourceutils"
+	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
+	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -29,7 +30,7 @@ func NewDatabaseResource() resource.Resource {
 
 // DatabaseResource defines the resource implementation.
 type DatabaseResource struct {
-	client *mongoclient.MongoClient
+	config *resourceconfig.ResourceConfig
 }
 
 // DatabaseResourceModel describes the resource data model.
@@ -74,82 +75,67 @@ func (r *DatabaseResource) Schema(ctx context.Context, req resource.SchemaReques
 }
 
 func (r *DatabaseResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
-	if req.ProviderData == nil {
+	config, diags := resourceconfig.FromProviderData(req.ProviderData)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	client, ok := req.ProviderData.(*mongoclient.MongoClient)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *mongoclient.MongoClientManager, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	r.client = client
+	r.config = config
 }
 
 func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data DatabaseResourceModel
+	client := r.config.Client.WithContext(ctx)
+	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
 
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		var data DatabaseResourceModel
 
-	// Connect to the MongoDB server
-	if err := r.client.WithContext(ctx).Connect(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	defer r.client.Disconnect()
+		// Read Terraform plan data into the model
+		resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Create the database
-	database := r.client.Database(data.Name.ValueString())
-	if err := database.EnsureExistance(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
+		// Perform the create operation
+		resp.Diagnostics.Append(resourceCreate(client, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Perform the read operation
-	resp.Diagnostics.Append(resourceRead(r.client, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		// Save data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	})
 }
 
 func (r *DatabaseResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data DatabaseResourceModel
+	client := r.config.Client.WithContext(ctx)
+	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
 
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		var data DatabaseResourceModel
 
-	// Connect to the MongoDB server
-	if err := r.client.WithContext(ctx).Connect(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	defer r.client.Disconnect()
+		// Read Terraform prior state data into the model
+		resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Perform the read operation
-	resp.Diagnostics.Append(resourceRead(r.client, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		// Perform the read operation
+		resp.Diagnostics.Append(resourceRead(client, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		// Save updated data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	})
 }
 
 func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -157,7 +143,6 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
 
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -167,49 +152,34 @@ func (r *DatabaseResource) Update(ctx context.Context, req resource.UpdateReques
 }
 
 func (r *DatabaseResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data DatabaseResourceModel
+	client := r.config.Client.WithContext(ctx)
+	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
 
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		var data DatabaseResourceModel
 
-	// Connect to the MongoDB server
-	if err := r.client.WithContext(ctx).Connect(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	defer r.client.Disconnect()
+		// Read Terraform prior state data into the model
+		resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	database := r.client.Database(data.Name.ValueString())
-
-	// Check if the database is empty
-	isEmpty, err := database.IsEmpty()
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-
-	if !isEmpty && !data.ForceDestroy.ValueBool() {
-		resp.Diagnostics.AddError("Database Contains Data", fmt.Sprintf("Database %s contains collections, set force_destroy to true to destroy the database", data.Name.ValueString()))
-		return
-	}
-
-	if err := database.Drop(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
+		// Perform the delete operation
+		resp.Diagnostics.Append(resourceDelete(client, &data)...)
+	})
 }
 
 func (r *DatabaseResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	id, err := resourceutils.NewId(req.ID)
+	id, err := resourceid.New(req.ID)
 	if err != nil {
-		resp.Diagnostics.AddError("Invalid Import ID", err.Error())
+		resp.Diagnostics.AddError(errornames.InvalidImportID, err.Error())
 		return
 	}
 	if id.Database() == "" {
-		resp.Diagnostics.AddError("Invalid Import ID", "Database name is required")
+		resp.Diagnostics.AddError(errornames.InvalidImportID, "Database name is required")
 		return
 	}
 

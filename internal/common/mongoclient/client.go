@@ -23,15 +23,32 @@ type MongoClient struct {
 func New(ctx context.Context, config *Config) *MongoClient {
 	return &MongoClient{
 		config: config,
+		ctx:    ctx,
 	}
 }
 
+func FromURI(uri string) *MongoClient {
+	return New(context.TODO(), &Config{
+		URI: uri,
+	})
+}
+
+func (c *MongoClient) Client() *mongo.Client {
+	return c.client
+}
+
 func (c *MongoClient) Connect() error {
+	// If already connected, return
+	if c.IsConnected() {
+		return nil
+	}
+
 	// Create a new client
 	client, err := mongo.Connect(c.ctx, options.Client().ApplyURI(c.config.URI))
 	if err != nil {
 		return err
 	}
+
 	// Check the connection
 	if err := client.Ping(c.ctx, nil); err != nil {
 		return err
@@ -41,6 +58,12 @@ func (c *MongoClient) Connect() error {
 }
 
 func (c *MongoClient) Disconnect() {
+	// If already disconnected, return
+	if !c.IsConnected() {
+		return
+	}
+
+	// Disconnect the client
 	if err := c.client.Disconnect(c.ctx); err != nil {
 		panic(err)
 	}
@@ -54,4 +77,10 @@ func (c *MongoClient) IsConnected() bool {
 func (c *MongoClient) WithContext(ctx context.Context) *MongoClient {
 	c.ctx = ctx
 	return c
+}
+
+func (c *MongoClient) Run(callback func(client *MongoClient, err error)) {
+	err := c.Connect()
+	callback(c, err)
+	c.Disconnect()
 }

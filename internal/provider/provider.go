@@ -11,8 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"go.uber.org/zap"
 
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
+	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/collection"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/database"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/document"
@@ -25,8 +27,8 @@ var _ provider.ProviderWithFunctions = &MongoProvider{}
 
 // MongoProvider defines the provider implementation.
 type MongoProvider struct {
-	// version is set to the provider version on release, "dev" when the
-	// provider is built and ran locally, and "test" when running acceptance
+	// version is set to the provider version on release, "0.0.0-unpublished-dev" when the
+	// provider is built and ran locally, and "0.0.0-unpublished-test" when running acceptance
 	// testing.
 	version string
 }
@@ -61,12 +63,13 @@ func (p *MongoProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		return
 	}
 
-	client := mongoclient.New(ctx, &mongoclient.Config{
-		URI: data.URI,
-	})
+	providerData := &resourceconfig.ResourceConfig{
+		Client: mongoclient.FromURI(data.URI).WithContext(ctx),
+		Logger: zap.NewNop(),
+	}
 
-	resp.ResourceData = client
-	resp.DataSourceData = client
+	resp.ResourceData = providerData
+	resp.DataSourceData = providerData
 }
 
 func (p *MongoProvider) Resources(ctx context.Context) []func() resource.Resource {

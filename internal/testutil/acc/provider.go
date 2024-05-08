@@ -21,10 +21,10 @@ const (
 // CLI command executed to create a provider server to which the CLI can
 // reattach.
 var TestAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	ProviderName: providerserver.NewProtocol6WithError(provider.New("test")()),
+	ProviderName: providerserver.NewProtocol6WithError(provider.New("0.0.0-unpublished-test")()),
 }
 
-func providerConfig(uri string) string {
+func ProviderConfig(uri string) string {
 	return fmt.Sprintf(`
 		terraform {
 			required_providers {
@@ -41,5 +41,5 @@ func providerConfig(uri string) string {
 }
 
 func WithProviderConfig(config string, uri string) string {
-	return providerConfig(uri) + "\n\n" + config
+	return ProviderConfig(uri) + "\n\n" + config
 }

@@ -5,10 +5,10 @@ package collection
 
 import (
 	"context"
-	"fmt"
 
+	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
-	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/database"
+	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -23,14 +23,14 @@ func NewCollectionDataSource() datasource.DataSource {
 
 // CollectionDataSource defines the data source implementation.
 type CollectionDataSource struct {
-	client *mongoclient.MongoClient
+	config *resourceconfig.ResourceConfig
 }
 
 // CollectionDataSourceModel describes the data source data model.
 type CollectionDataSourceModel struct {
+	Id       types.String `tfsdk:"id"`
 	Database types.String `tfsdk:"database"`
 	Name     types.String `tfsdk:"name"`
-	Id       types.String `tfsdk:"id"`
 }
 
 func (d *CollectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -43,76 +43,54 @@ func (d *CollectionDataSource) Schema(ctx context.Context, req datasource.Schema
 		MarkdownDescription: "This data source reads a single collection in a database on the MongoDB server.",
 
 		Attributes: map[string]schema.Attribute{
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Name of the database",
-				Required:            true,
+			"id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "Resource identifier. Has a value with a format of databases/<database_name>/collections/<collection_name>.",
 			},
 			"database": schema.StringAttribute{
 				Required:            true,
 				MarkdownDescription: "Name of the database to read the collection in.",
 			},
-			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "Resource identifier. Has a value with a format of databases/<database_name>/collections/<collection_name>.",
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Name of the database",
+				Required:            true,
 			},
 		},
 	}
 }
 
 func (d *CollectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
-	if req.ProviderData == nil {
+	config, diags := resourceconfig.FromProviderData(req.ProviderData)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	client, ok := req.ProviderData.(*mongoclient.MongoClient)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *mongoclient.MongoClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	d.client = client
+	d.config = config
 }
 
 func (d *CollectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data CollectionDataSourceModel
-	if err := d.client.WithContext(ctx).Connect(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	defer d.client.Disconnect()
+	client := d.config.Client.WithContext(ctx)
+	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
 
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		var data CollectionDataSourceModel
+		// Read Terraform prior state data into the model
+		resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Check if the database exists
-	database := database.CheckExistance(d.client, data.Database.ValueString(), &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		// Perform read operation
+		resp.Diagnostics.Append(dataSourceRead(client, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Check if the collection exists
-	CheckExistance(database, data.Name.ValueString(), &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Set resource Id
-	resourceId, err := CreateResourceId(data.Database, data.Name)
-	if err != nil {
-		resp.Diagnostics.AddError("Invalid configuration", err.Error())
-		return
-	}
-	data.Id = resourceId
-
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		// Save updated data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	})
 }

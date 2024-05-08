@@ -6,14 +6,32 @@ package index_test
 import (
 	"testing"
 
+	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/acc"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/mongolocal"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccIndexResource(t *testing.T) {
-	mongolocal.WithMongoLocal(t, func(server *mongolocal.MongoLocal) {
+func TestAccIndexResource_Lifecycle(t *testing.T) {
+	t.Parallel()
+	mongolocal.RunWithServer(t, func(server *mongolocal.MongoLocal) {
+		logger := server.Logger()
+
+		mongoclient.FromURI(server.URI()).Run(func(client *mongoclient.MongoClient, err error) {
+			if err != nil {
+				logger.Sugar().Fatalf("failed to create a client: %v", err)
+			}
+
+			logger.Info("creating a document to test index resource")
+
+			if _, err := client.Database("test-database").Collection("test-collection").InsertOne(mongoclient.Document{"test-field": "test-value"}); err != nil {
+				logger.Sugar().Fatalf("failed to insert a document: %v", err)
+			}
+		})
+
+		logger.Info("running the test...")
+
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { acc.TestAccPreCheck(t) },
 			ProtoV6ProviderFactories: acc.TestAccProtoV6ProviderFactories,
@@ -39,7 +57,12 @@ func TestAccIndexResource(t *testing.T) {
 				{
 					ResourceName: "mongodb_database_index.test",
 					ImportStateIdFunc: func(s *terraform.State) (string, error) {
-						index_name := s.RootModule().Resources["mongodb_database_index.test"].Primary.RawState.GetAttr("index_name").AsString()
+						resources, err := acc.LoadResources(s.RootModule().Resources)
+						if err != nil {
+							return "", err
+						}
+
+						index_name := resources["mongodb_database_index.test"].(map[string]interface{})["primary"].(map[string]interface{})["attributes"].(map[string]interface{})["index_name"].(string)
 						return "databases/test-database/collections/test-collection/indexes/" + index_name, nil
 					},
 					ImportState:       true,

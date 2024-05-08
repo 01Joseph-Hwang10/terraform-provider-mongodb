@@ -12,6 +12,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type SanitizedIndexSpec struct {
+	Name      string
+	Field     string
+	Direction int
+	Unique    bool
+}
+
 type Index struct {
 	name       string
 	field      string
@@ -23,12 +30,12 @@ type Index struct {
 	ctx        context.Context
 }
 
-func (c *Collection) IndexFromField(field string, direction int, unique bool) *Index {
+func (c *Collection) Index(name string) *Index {
 	return &Index{
-		name:       "",
-		field:      field,
-		direction:  direction,
-		unique:     unique,
+		name:       name,
+		field:      "",
+		direction:  0,
+		unique:     false,
 		client:     c.client,
 		database:   c.database,
 		collection: c.collection,
@@ -36,12 +43,12 @@ func (c *Collection) IndexFromField(field string, direction int, unique bool) *I
 	}
 }
 
-func (c *Collection) Index(name string) *Index {
+func (c *Collection) IndexFromField(field string, direction int, unique bool) *Index {
 	return &Index{
-		name:       name,
-		field:      "",
-		direction:  0,
-		unique:     false,
+		name:       "",
+		field:      field,
+		direction:  direction,
+		unique:     unique,
 		client:     c.client,
 		database:   c.database,
 		collection: c.collection,
@@ -95,51 +102,90 @@ func (i *Index) Exists() (bool, error) {
 		return false, err
 	}
 
-	var spec *mongo.IndexSpecification
+	var spec *SanitizedIndexSpec
 	if i.name == "" {
-		spec = findIndexByField(i.field, i.direction, i.unique, specs)
+		spec, err = findIndexByField(i.field, i.direction, i.unique, specs)
+		if err != nil {
+			return false, err
+		}
+		if spec == nil {
+			return false, nil
+		}
 
 		// Update the index name
 		i.name = spec.Name
 	} else {
-		spec = findIndexByName(i.name, specs)
-
-		// Update the index properties
-		elements, err := spec.KeysDocument.Elements()
+		spec, err = findIndexByName(i.name, specs)
 		if err != nil {
 			return false, err
 		}
-		i.field = elements[0].Key()
-		i.direction = int(elements[0].Value().Int32())
-		i.unique = *spec.Unique
+		if spec == nil {
+			return false, nil
+		}
+
+		// Update the index properties
+		i.field = spec.Field
+		i.direction = spec.Direction
+		i.unique = spec.Unique
 	}
-	return spec != nil, nil
+	return true, nil
 }
 
-func findIndexByName(name string, specs []*mongo.IndexSpecification) *mongo.IndexSpecification {
+func findIndexByName(name string, specs []*mongo.IndexSpecification) (*SanitizedIndexSpec, error) {
 	for _, spec := range specs {
 		if spec.Name == name {
-			return spec
-		}
-	}
-	return nil
-}
-
-func findIndexByField(field string, direction int, unique bool, specs []*mongo.IndexSpecification) *mongo.IndexSpecification {
-	for _, spec := range specs {
-		if *spec.Unique == unique {
+			// Get field name and direction
 			elements, err := spec.KeysDocument.Elements()
 			if err != nil {
-				return nil
+				return nil, err
+			}
+			var field string
+			var direction int
+			for _, element := range elements {
+				field = element.Key()
+				direction = int(element.Value().Int32())
+				break
+			}
+
+			// Get unique constraint
+			unique := false
+			if spec.Unique != nil && *spec.Unique {
+				unique = true
+			}
+
+			// Return the index spec
+			return &SanitizedIndexSpec{
+				Name:      spec.Name,
+				Field:     field,
+				Direction: direction,
+				Unique:    unique,
+			}, nil
+		}
+	}
+	return nil, nil
+}
+
+func findIndexByField(field string, direction int, unique bool, specs []*mongo.IndexSpecification) (*SanitizedIndexSpec, error) {
+	for _, spec := range specs {
+		uniqueMatches := (!unique && spec.Unique == nil) || (spec.Unique != nil && unique == *spec.Unique)
+		if uniqueMatches {
+			elements, err := spec.KeysDocument.Elements()
+			if err != nil {
+				return nil, err
 			}
 			for _, element := range elements {
 				if element.Key() == field && element.Value().Int32() == int32(direction) {
-					return spec
+					return &SanitizedIndexSpec{
+						Name:      spec.Name,
+						Field:     field,
+						Direction: direction,
+						Unique:    unique,
+					}, nil
 				}
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func (i *Index) EnsureExistance() error {

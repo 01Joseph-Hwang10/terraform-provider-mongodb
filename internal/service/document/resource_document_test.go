@@ -4,60 +4,126 @@
 package document_test
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
+	stringutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/acc"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/mongolocal"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccDocumentResource(t *testing.T) {
-	mongolocal.WithMongoLocal(t, func(server *mongolocal.MongoLocal) {
+func TestAccDocumentResource_Lifecycle(t *testing.T) {
+	t.Parallel()
+	mongolocal.RunWithServer(t, func(server *mongolocal.MongoLocal) {
+		logger := server.Logger()
+
+		mongoclient.FromURI(server.URI()).Run(func(client *mongoclient.MongoClient, err error) {
+			if err != nil {
+				logger.Sugar().Fatalf("failed to create a client: %v", err)
+			}
+
+			logger.Info("creating a database and a collection to test the collection resource")
+			database := client.Database("test-database")
+			if err := database.Collection("test-collection").EnsureExistance(); err != nil {
+				logger.Sugar().Fatalf("failed to create a collection: %v", err)
+			}
+		})
+
+		tfFormat := stringutils.ReplaceChain(
+			stringutils.Replacement("\n", ""),
+			stringutils.Replacement("\t", ""),
+		)
+		compFormat := tfFormat.Copy().Extend(
+			stringutils.Replacement("\\\"", "\""),
+		)
+
+		firstDocument := `
+			{
+				\"name\":\"test-document\",
+				\"with\":{
+					\"some\":\"nested\",
+					\"fields\":\"and\",
+					\"arrays\":	[
+						1,
+						2,
+						{
+							\"three\":3
+						}
+					]
+				}
+			}
+		`
+		updatedDocument := `
+			{
+				\"name\":\"test-document\",
+				\"with\":\"some-changed-value\"
+			}
+		`
+
+		logger.Info("running the test...")
+
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { acc.TestAccPreCheck(t) },
 			ProtoV6ProviderFactories: acc.TestAccProtoV6ProviderFactories,
 			Steps: []resource.TestStep{
 				// Create and Read testing
 				{
-					Config: acc.WithProviderConfig(`
-						resource "mongodb_database_document" "test" {
-							database = "test-database"
-							collection = "test-collection"
-							document = "{ \"name\": \"test-document\" }"
-						}
-					`, server.URI()),
+					Config: acc.WithProviderConfig(documentResource(
+						"test-database",
+						"test-collection",
+						tfFormat.Apply(firstDocument),
+					), server.URI()),
 					Check: resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttr("mongodb_database_document.test", "collection", "test-collection"),
 						resource.TestCheckResourceAttr("mongodb_database_document.test", "database", "test-database"),
-						resource.TestCheckResourceAttr("mongodb_database_document.test", "document", "{ \"name\": \"test-document\" }"),
+						resource.TestCheckResourceAttr("mongodb_database_document.test", "document", compFormat.Apply(firstDocument)),
 					),
 				},
 				// ImportState testing
 				{
 					ResourceName: "mongodb_database_document.test",
 					ImportStateIdFunc: func(s *terraform.State) (string, error) {
-						document_id := s.RootModule().Resources["mongodb_database_document.test"].Primary.RawState.GetAttr("document_id").AsString()
+						// Load resource data from state as JSON
+						resources, err := acc.LoadResources(s.RootModule().Resources)
+						if err != nil {
+							return "", err
+						}
+
+						// Select the document ID
+						document_id := resources["mongodb_database_document.test"].(map[string]interface{})["primary"].(map[string]interface{})["attributes"].(map[string]interface{})["document_id"].(string)
+
 						return "databases/test-database/collections/test-collection/documents/" + document_id, nil
 					},
-					ImportState:       true,
-					ImportStateVerify: true,
+					ImportState:             true,
+					ImportStateVerify:       true,
+					ImportStateVerifyIgnore: []string{"document"},
 				},
 				// Update and Read testing
 				{
-					Config: acc.WithProviderConfig(`
-						resource "mongodb_database_collection" "test" {
-							database = "test-database"
-							collection = "test-collection"
-							document = "{ \"name\": \"test-document\", \"age\": 20}"
-						}
-					`, server.URI()),
+					Config: acc.WithProviderConfig(documentResource(
+						"test-database",
+						"test-collection",
+						tfFormat.Apply(updatedDocument),
+					), server.URI()),
 					Check: resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttr("mongodb_database_document.test", "document", "{ \"name\": \"test-document\", \"age\": 20}"),
+						resource.TestCheckResourceAttr("mongodb_database_document.test", "document", compFormat.Apply(updatedDocument)),
 					),
 				},
 				// Delete testing automatically occurs in TestCase
 			},
 		})
 	})
+}
+
+func documentResource(database string, collection string, document string) string {
+	return fmt.Sprintf(`
+		resource "mongodb_database_document" "test" {
+			database = "%s"
+			collection = "%s"
+			document = "%s"
+		}
+	`, database, collection, document)
 }

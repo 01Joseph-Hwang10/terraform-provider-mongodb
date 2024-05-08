@@ -1,4 +1,7 @@
-package resourceutils
+// Copyright (c) 01Joseph-Hwang10
+// SPDX-License-Identifier: MPL-2.0
+
+package resourceid
 
 import (
 	"errors"
@@ -15,7 +18,7 @@ type ResourceId struct {
 	index      string
 }
 
-func NewId(id string) (*ResourceId, error) {
+func New(id string) (*ResourceId, error) {
 	isUnderDatabase := strings.Contains(id, "databases/")
 	isUnderCollection := strings.Contains(id, "collections/")
 	isUnderDocument := strings.Contains(id, "documents/")

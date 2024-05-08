@@ -5,9 +5,9 @@ package index
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
+	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -22,7 +22,7 @@ func NewIndexDataSource() datasource.DataSource {
 
 // IndexDataSource defines the data source implementation.
 type IndexDataSource struct {
-	client *mongoclient.MongoClient
+	config *resourceconfig.ResourceConfig
 }
 
 // IndexDataSourceModel describes the data source data model.
@@ -30,9 +30,9 @@ type IndexDataSourceModel struct {
 	Id         types.String `tfsdk:"id"`
 	Database   types.String `tfsdk:"database"`
 	Collection types.String `tfsdk:"collection"`
-	Field      types.String `tfsdk:"key"`
-	Direction  types.Int64  `tfsdk:"direction"`
 	IndexName  types.String `tfsdk:"index_name"`
+	Field      types.String `tfsdk:"field"`
+	Direction  types.Int64  `tfsdk:"direction"`
 	Unique     types.Bool   `tfsdk:"unique"`
 }
 
@@ -58,6 +58,10 @@ func (d *IndexDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 				Required:            true,
 				MarkdownDescription: "Name of the collection to read the index in.",
 			},
+			"index_name": schema.StringAttribute{
+				Required:            true,
+				MarkdownDescription: "Name of the index.",
+			},
 			"field": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "Name of the field to create the index on.",
@@ -70,56 +74,38 @@ func (d *IndexDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 				Computed:            true,
 				MarkdownDescription: "If true, this index has a unique constraint.",
 			},
-			"index_name": schema.StringAttribute{
-				Required:            true,
-				MarkdownDescription: "Name of the index.",
-			},
 		},
 	}
 }
 
 func (d *IndexDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
-	if req.ProviderData == nil {
+	config, diags := resourceconfig.FromProviderData(req.ProviderData)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	client, ok := req.ProviderData.(*mongoclient.MongoClient)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *mongoclient.MongoClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	d.client = client
+	d.config = config
 }
 
 func (d *IndexDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data IndexDataSourceModel
+	client := d.config.Client.WithContext(ctx)
+	client.Run(func(client *mongoclient.MongoClient, err error) {
+		var data IndexDataSourceModel
 
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+		// Read Terraform prior state data into the model
+		resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Connect to the MongoDB server
-	if err := d.client.WithContext(ctx).Connect(); err != nil {
-		resp.Diagnostics.AddError("Client Error", err.Error())
-		return
-	}
-	defer d.client.Disconnect()
+		// Perform read operation
+		resp.Diagnostics.Append(dataSourceRead(client, &data)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Perform read operation
-	resp.Diagnostics.Append(dataSourceRead(d.client, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		// Save updated data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	})
 }
