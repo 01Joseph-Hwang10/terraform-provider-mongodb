@@ -8,6 +8,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 )
 
 type Config struct {
@@ -17,6 +18,7 @@ type Config struct {
 type MongoClient struct {
 	config *Config
 	client *mongo.Client
+	logger *zap.Logger
 	ctx    context.Context
 }
 
@@ -28,7 +30,7 @@ func New(ctx context.Context, config *Config) *MongoClient {
 }
 
 func FromURI(uri string) *MongoClient {
-	return New(context.TODO(), &Config{
+	return New(context.Background(), &Config{
 		URI: uri,
 	})
 }
@@ -76,6 +78,11 @@ func (c *MongoClient) IsConnected() bool {
 
 func (c *MongoClient) WithContext(ctx context.Context) *MongoClient {
 	c.ctx = ctx
+	return c
+}
+
+func (c *MongoClient) WithLogger(logger *zap.Logger) *MongoClient {
+	c.logger = logger
 	return c
 }
 

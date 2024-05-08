@@ -98,7 +98,7 @@ func (r *DocumentResource) Configure(ctx context.Context, req resource.Configure
 }
 
 func (r *DocumentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	client := r.config.Client.WithContext(ctx)
+	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
 			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
@@ -124,7 +124,7 @@ func (r *DocumentResource) Create(ctx context.Context, req resource.CreateReques
 }
 
 func (r *DocumentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	client := r.config.Client.WithContext(ctx)
+	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
 			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
@@ -151,7 +151,7 @@ func (r *DocumentResource) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 func (r *DocumentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	client := r.config.Client.WithContext(ctx)
+	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
 			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
@@ -178,7 +178,7 @@ func (r *DocumentResource) Update(ctx context.Context, req resource.UpdateReques
 }
 
 func (r *DocumentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	client := r.config.Client.WithContext(ctx)
+	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
 			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())

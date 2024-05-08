@@ -9,6 +9,7 @@ import (
 
 	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
+	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/provider"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/acc"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/mongolocal"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -17,9 +18,11 @@ import (
 func TestAccDatabaseResource_Lifecycle(t *testing.T) {
 	t.Parallel()
 	mongolocal.RunWithServer(t, func(server *mongolocal.MongoLocal) {
+		logger := server.Logger()
+
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { acc.TestAccPreCheck(t) },
-			ProtoV6ProviderFactories: acc.TestAccProtoV6ProviderFactories,
+			ProtoV6ProviderFactories: acc.TestAccProtoV6ProviderFactoriesWithProviderConfig(&provider.Config{Logger: logger}),
 			Steps: []resource.TestStep{
 				// Create and Read testing
 				{
@@ -80,7 +83,7 @@ func TestAccDatabaseResource_ForceDestroy(t *testing.T) {
 		logger.Info("running the test...")
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { acc.TestAccPreCheck(t) },
-			ProtoV6ProviderFactories: acc.TestAccProtoV6ProviderFactories,
+			ProtoV6ProviderFactories: acc.TestAccProtoV6ProviderFactoriesWithProviderConfig(&provider.Config{Logger: logger}),
 			Steps: []resource.TestStep{
 				// Import the resource
 				{

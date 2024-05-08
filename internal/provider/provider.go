@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"go.uber.org/zap"
 
+	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/collection"
@@ -25,12 +26,19 @@ import (
 var _ provider.Provider = &MongoProvider{}
 var _ provider.ProviderWithFunctions = &MongoProvider{}
 
+type Config struct {
+	Logger *zap.Logger
+}
+
 // MongoProvider defines the provider implementation.
 type MongoProvider struct {
-	// version is set to the provider version on release, "0.0.0-unpublished-dev" when the
-	// provider is built and ran locally, and "0.0.0-unpublished-test" when running acceptance
+	// version is set to the provider version on release, "dev" when the
+	// provider is built and ran locally, and "test" when running acceptance
 	// testing.
 	version string
+
+	// config configures provider behavior.
+	config *Config
 }
 
 // MongoProviderModel describes the provider data model.
@@ -58,14 +66,23 @@ func (p *MongoProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	var data MongoProviderModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Prepare mongo client
+	client := mongoclient.FromURI(data.URI).WithContext(ctx)
+
+	// Prepare the logger
+	logger, err := configureLogger(p)
+	if err != nil {
+		resp.Diagnostics.AddError(errornames.UnexpectedError, err.Error())
+		return
+	}
+
 	providerData := &resourceconfig.ResourceConfig{
-		Client: mongoclient.FromURI(data.URI).WithContext(ctx),
-		Logger: zap.NewNop(),
+		Client: client,
+		Logger: logger,
 	}
 
 	resp.ResourceData = providerData
@@ -95,9 +112,19 @@ func (p *MongoProvider) Functions(ctx context.Context) []func() function.Functio
 }
 
 func New(version string) func() provider.Provider {
+	// Set default config values
+	config := &Config{
+		Logger: nil,
+	}
+
+	return WithConfig(version, config)
+}
+
+func WithConfig(version string, config *Config) func() provider.Provider {
 	return func() provider.Provider {
 		return &MongoProvider{
 			version: version,
+			config:  config,
 		}
 	}
 }

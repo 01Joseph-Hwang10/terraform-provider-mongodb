@@ -132,7 +132,7 @@ func (r *IndexResource) Configure(ctx context.Context, req resource.ConfigureReq
 }
 
 func (r *IndexResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	client := r.config.Client.WithContext(ctx)
+	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		var data IndexResourceModel
 
@@ -154,7 +154,7 @@ func (r *IndexResource) Create(ctx context.Context, req resource.CreateRequest, 
 }
 
 func (r *IndexResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	client := r.config.Client.WithContext(ctx)
+	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		var data IndexResourceModel
 		// Read Terraform prior state data into the model
@@ -188,7 +188,7 @@ func (r *IndexResource) Update(ctx context.Context, req resource.UpdateRequest, 
 }
 
 func (r *IndexResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	client := r.config.Client.WithContext(ctx)
+	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		var data IndexResourceModel
 

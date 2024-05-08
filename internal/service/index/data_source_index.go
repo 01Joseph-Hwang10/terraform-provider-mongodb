@@ -89,7 +89,7 @@ func (d *IndexDataSource) Configure(ctx context.Context, req datasource.Configur
 }
 
 func (d *IndexDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	client := d.config.Client.WithContext(ctx)
+	client := d.config.Client.WithContext(ctx).WithLogger(d.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		var data IndexDataSourceModel
 

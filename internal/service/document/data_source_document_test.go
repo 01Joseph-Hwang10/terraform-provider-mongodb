@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
+	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/provider"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/acc"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/mongolocal"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -36,7 +37,7 @@ func TestAccDocumentDataSource(t *testing.T) {
 
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { acc.TestAccPreCheck(t) },
-			ProtoV6ProviderFactories: acc.TestAccProtoV6ProviderFactories,
+			ProtoV6ProviderFactories: acc.TestAccProtoV6ProviderFactoriesWithProviderConfig(&provider.Config{Logger: logger}),
 			Steps: []resource.TestStep{
 				// Read testing
 				{

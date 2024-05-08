@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/provider"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/acc"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/mongolocal"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -18,10 +19,12 @@ import (
 
 func TestAccIndexDataSource(t *testing.T) {
 	mongolocal.RunWithServer(t, func(server *mongolocal.MongoLocal) {
+		logger := server.Logger()
+
 		// Create collection index for testing
 		client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(server.URI()))
 		if err != nil {
-			t.Fatalf("failed to connect to MongoDB: %s", err)
+			logger.Sugar().Fatalf("failed to connect to MongoDB: %s", err)
 			return
 		}
 		defer client.Disconnect(context.Background())
@@ -31,13 +34,13 @@ func TestAccIndexDataSource(t *testing.T) {
 			Keys: bson.M{"test-field": 1},
 		})
 		if err != nil {
-			t.Fatalf("failed to create index: %s", err)
+			logger.Sugar().Fatalf("failed to create index: %s", err)
 			return
 		}
 
 		resource.Test(t, resource.TestCase{
 			PreCheck:                 func() { acc.TestAccPreCheck(t) },
-			ProtoV6ProviderFactories: acc.TestAccProtoV6ProviderFactories,
+			ProtoV6ProviderFactories: acc.TestAccProtoV6ProviderFactoriesWithProviderConfig(&provider.Config{Logger: logger}),
 			Steps: []resource.TestStep{
 				// Read testing
 				{

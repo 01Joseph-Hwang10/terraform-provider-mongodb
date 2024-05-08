@@ -8,6 +8,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 )
 
 const (
@@ -20,6 +21,7 @@ type Database struct {
 	client   *mongo.Client
 	database *mongo.Database
 	ctx      context.Context
+	logger   *zap.Logger
 }
 
 func (c *MongoClient) Database(name string) *Database {
@@ -29,6 +31,7 @@ func (c *MongoClient) Database(name string) *Database {
 		client:   c.client,
 		database: database,
 		ctx:      c.ctx,
+		logger:   c.logger,
 	}
 }
 
@@ -41,11 +44,17 @@ func (d *Database) Client() *MongoClient {
 		config: nil,
 		client: d.client,
 		ctx:    d.ctx,
+		logger: d.logger,
 	}
 }
 
 func (d *Database) WithContext(ctx context.Context) *Database {
 	d.ctx = ctx
+	return d
+}
+
+func (d *Database) WithLogger(logger *zap.Logger) *Database {
+	d.logger = logger
 	return d
 }
 

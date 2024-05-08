@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 )
 
 type SanitizedIndexSpec struct {
@@ -28,6 +29,7 @@ type Index struct {
 	database   *mongo.Database
 	collection *mongo.Collection
 	ctx        context.Context
+	logger     *zap.Logger
 }
 
 func (c *Collection) Index(name string) *Index {
@@ -40,6 +42,7 @@ func (c *Collection) Index(name string) *Index {
 		database:   c.database,
 		collection: c.collection,
 		ctx:        c.ctx,
+		logger:     c.logger,
 	}
 }
 
@@ -53,6 +56,7 @@ func (c *Collection) IndexFromField(field string, direction int, unique bool) *I
 		database:   c.database,
 		collection: c.collection,
 		ctx:        c.ctx,
+		logger:     c.logger,
 	}
 }
 
@@ -87,6 +91,7 @@ func (i *Index) Collection() *Collection {
 		database:   i.database,
 		collection: i.collection,
 		ctx:        i.ctx,
+		logger:     i.logger,
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 )
 
 type Collection struct {
@@ -18,6 +19,7 @@ type Collection struct {
 	database   *mongo.Database
 	collection *mongo.Collection
 	ctx        context.Context
+	logger     *zap.Logger
 }
 
 func (d *Database) Collection(name string) *Collection {
@@ -28,6 +30,7 @@ func (d *Database) Collection(name string) *Collection {
 		database:   d.database,
 		collection: collection,
 		ctx:        d.ctx,
+		logger:     d.logger,
 	}
 }
 
@@ -45,11 +48,17 @@ func (c *Collection) Database() *Database {
 		client:   c.client,
 		database: c.database,
 		ctx:      c.ctx,
+		logger:   c.logger,
 	}
 }
 
 func (c *Collection) WithContext(ctx context.Context) *Collection {
 	c.ctx = ctx
+	return c
+}
+
+func (c *Collection) WithLogger(logger *zap.Logger) *Collection {
+	c.logger = logger
 	return c
 }
 
