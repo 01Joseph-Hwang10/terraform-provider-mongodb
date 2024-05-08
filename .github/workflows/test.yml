@@ -25,18 +25,20 @@ jobs:
       run: ${{ steps.decide-run.outputs.run }}
     steps:
       - id: decide-run
+        shell: bash
         run: |
           if [[ "${{ github.head_ref }}" == *"dependabot"* ]]; then
-             echo "run=false" >> $GITHUB_OUTPUT
+              echo "Skipping tests for dependabot PRs"
+              echo "run=false" >> $GITHUB_OUTPUT
           else
-             echo "run=true" >> $GITHUB_OUTPUT  
+              echo "run=true" >> $GITHUB_OUTPUT  
           fi
 
   # Ensure project builds before running testing matrix
   build:
     name: Build
     needs: setup
-    if: ${{ needs.setup.outputs.run }} == 'true'
+    if: ${{ needs.setup.outputs.run == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -54,7 +56,7 @@ jobs:
 
   generate:
     needs: setup
-    if: ${{ needs.setup.outputs.run }} == 'true'
+    if: ${{ needs.setup.outputs.run == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -78,7 +80,7 @@ jobs:
   test:
     name: Terraform Provider Acceptance Tests
     needs: [setup, build]
-    if: ${{ needs.setup.outputs.run }} == 'true'
+    if: ${{ needs.setup.outputs.run == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
