@@ -29,6 +29,10 @@ func (v *isDirection) MarkdownDescription(context.Context) string {
 }
 
 func (v *isDirection) ValidateInt64(ctx context.Context, req validator.Int64Request, resp *validator.Int64Response) {
+	if req.ConfigValue.IsNull() {
+		return
+	}
+
 	value := req.ConfigValue.ValueInt64()
 	if value == 1 || value == -1 {
 		return
