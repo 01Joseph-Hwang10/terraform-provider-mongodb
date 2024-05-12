@@ -63,7 +63,10 @@ func (c *Collection) WithLogger(logger *zap.Logger) *Collection {
 }
 
 func (c *Collection) Exists() (bool, error) {
-	names, err := c.database.ListCollectionNames(c.ctx, bson.D{{"name", c.name}})
+	names, err := c.database.ListCollectionNames(
+		c.ctx,
+		bson.D{{Key: "name", Value: c.name}},
+	)
 	if err != nil {
 		return false, err
 	}
@@ -115,7 +118,8 @@ func (c *Collection) FindById(id string, opts *FindByIdOptions) (Document, error
 
 	// Retrieve the document
 	var document Document
-	if err := c.collection.FindOne(c.ctx, bson.D{{"_id", oid}}).Decode(&document); err != nil {
+	filter := bson.D{{Key: "_id", Value: oid}}
+	if err := c.collection.FindOne(c.ctx, filter).Decode(&document); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
@@ -148,7 +152,8 @@ func (c *Collection) UpdateByID(id string, update Document) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.collection.UpdateOne(c.ctx, bson.D{{"_id", oid}}, update)
+	filter := bson.D{{Key: "_id", Value: oid}}
+	_, err = c.collection.UpdateOne(c.ctx, filter, update)
 	return err
 }
 
@@ -157,6 +162,7 @@ func (c *Collection) DeleteByID(id string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.collection.DeleteOne(c.ctx, bson.D{{"_id", oid}})
+	filter := bson.D{{Key: "_id", Value: oid}}
+	_, err = c.collection.DeleteOne(c.ctx, filter)
 	return err
 }
