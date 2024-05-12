@@ -40,11 +40,6 @@ func (c *MongoClient) Client() *mongo.Client {
 }
 
 func (c *MongoClient) Connect() error {
-	// If already connected, return
-	if c.IsConnected() {
-		return nil
-	}
-
 	// Create a new client
 	client, err := mongo.Connect(c.ctx, options.Client().ApplyURI(c.config.URI))
 	if err != nil {
@@ -60,15 +55,11 @@ func (c *MongoClient) Connect() error {
 }
 
 func (c *MongoClient) Disconnect() {
-	// If already disconnected, return
-	if !c.IsConnected() {
-		return
-	}
+	// We don't handle the error here because we are disconnecting
+	// the client anyway.
+	_ = c.client.Disconnect(c.ctx)
 
-	// Disconnect the client
-	if err := c.client.Disconnect(c.ctx); err != nil {
-		panic(err)
-	}
+	// Set the client to nil
 	c.client = nil
 }
 

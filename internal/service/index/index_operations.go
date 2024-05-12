@@ -122,20 +122,29 @@ func resourceCreate(client *mongoclient.MongoClient, data *IndexResourceModel) d
 	}
 
 	// Create the index
-	index := collection.IndexFromField(data.Field.ValueString(), int(data.Direction.ValueInt64()), data.Unique.ValueBool())
+	field := data.Field.ValueString()
+	direction := int(data.Direction.ValueInt64())
+	unique := data.Unique.ValueBool()
+	index := collection.IndexFromField(field, direction, unique)
 	if err := index.EnsureExistance(); err != nil {
 		diags.AddError(errornames.MongoClientError, err.Error())
 		return diags
 	}
 
+	// Get the index name
+	name := index.Name()
+
+	// If the index name is not set,
+	// infer it from the field name and direction
+	if name == "" {
+		name = fmt.Sprintf("%s_%d", field, direction)
+	}
+
 	// Set index name
-	data.IndexName = basetypes.NewStringValue(index.Name())
+	data.IndexName = basetypes.NewStringValue(name)
 
 	// Perform read operation
 	diags.Append(resourceRead(client, data)...)
-	if diags.HasError() {
-		return diags
-	}
 
 	return diags
 }

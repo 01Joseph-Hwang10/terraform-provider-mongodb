@@ -152,8 +152,9 @@ func (c *Collection) UpdateByID(id string, update Document) error {
 	if err != nil {
 		return err
 	}
+
 	filter := bson.D{{Key: "_id", Value: oid}}
-	_, err = c.collection.UpdateOne(c.ctx, filter, update)
+	_, err = c.collection.UpdateOne(c.ctx, filter, bson.D{{Key: "$set", Value: update}})
 	return err
 }
 

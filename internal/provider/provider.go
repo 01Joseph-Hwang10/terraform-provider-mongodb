@@ -87,9 +87,6 @@ func (p *MongoProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		return
 	}
 
-	// Prepare mongo client
-	client := mongoclient.FromURI(data.URI).WithContext(ctx)
-
 	// Prepare the logger
 	logger, err := configureLogger(p)
 	if err != nil {
@@ -98,8 +95,8 @@ func (p *MongoProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	}
 
 	providerData := &resourceconfig.ResourceConfig{
-		Client: client,
-		Logger: logger,
+		ClientConfig: &mongoclient.Config{URI: data.URI},
+		Logger:       logger,
 	}
 
 	resp.ResourceData = providerData

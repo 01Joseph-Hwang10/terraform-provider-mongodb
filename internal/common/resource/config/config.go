@@ -13,8 +13,8 @@ import (
 )
 
 type ResourceConfig struct {
-	Client *mongoclient.MongoClient
-	Logger *zap.Logger
+	ClientConfig *mongoclient.Config
+	Logger       *zap.Logger
 }
 
 func FromProviderData(data any) (config *ResourceConfig, diags diag.Diagnostics) {
@@ -32,10 +32,10 @@ func FromProviderData(data any) (config *ResourceConfig, diags diag.Diagnostics)
 		return nil, diags
 	}
 
-	if providerData.Client == nil {
+	if providerData.ClientConfig == nil {
 		diags.AddError(
 			errornames.UnexpectedResourceConfigurationType,
-			"Expected *mongoclient.MongoClient, got nil. Please report this issue to the provider developers.",
+			"Expected *mongoclient.Config, got nil. Please report this issue to the provider developers.",
 		)
 		return nil, diags
 	}

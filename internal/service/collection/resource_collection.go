@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -101,6 +102,9 @@ func (r *CollectionResource) Schema(ctx context.Context, req resource.SchemaRequ
 
 					Set this to true to force destroy the collection even if it contains data.
 				`),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -117,7 +121,7 @@ func (r *CollectionResource) Configure(ctx context.Context, req resource.Configu
 }
 
 func (r *CollectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
+	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
 			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
@@ -144,7 +148,7 @@ func (r *CollectionResource) Create(ctx context.Context, req resource.CreateRequ
 }
 
 func (r *CollectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
+	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
 			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
@@ -185,7 +189,7 @@ func (r *CollectionResource) Update(ctx context.Context, req resource.UpdateRequ
 }
 
 func (r *CollectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
+	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
 			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())

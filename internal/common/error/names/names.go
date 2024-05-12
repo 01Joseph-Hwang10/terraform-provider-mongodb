@@ -20,6 +20,7 @@ const (
 	DatabaseNotEmpty       = "Database Not Empty"
 	CollectionNotEmpty     = "Collection Not Empty"
 	IndexDeletionForbidden = "Index Deletion Forbidden"
+	InvalidInputValue      = "Invalid Input Value"
 	InvalidJSONInput       = "Invalid JSON Input"
 	InconsistentDocument   = "Inconsistent Document"
 

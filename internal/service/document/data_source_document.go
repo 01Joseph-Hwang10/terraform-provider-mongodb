@@ -117,7 +117,7 @@ func (d *DocumentDataSource) Configure(ctx context.Context, req datasource.Confi
 }
 
 func (d *DocumentDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	client := d.config.Client.WithContext(ctx).WithLogger(d.config.Logger)
+	client := mongoclient.New(ctx, d.config.ClientConfig).WithLogger(d.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
 			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())

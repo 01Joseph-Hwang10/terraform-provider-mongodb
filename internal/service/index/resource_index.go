@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -118,6 +119,10 @@ func (r *IndexResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Default:             int64default.StaticInt64(1),
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
+					int64planmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.Int64{
+					IsDirection(),
 				},
 			},
 			"unique": schema.BoolAttribute{
@@ -127,6 +132,7 @@ func (r *IndexResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Default:             booldefault.StaticBool(false),
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
+					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"force_destroy": schema.BoolAttribute{
@@ -141,6 +147,9 @@ func (r *IndexResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 
 					Set this to true to force destroy the index.
 				`),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -157,8 +166,13 @@ func (r *IndexResource) Configure(ctx context.Context, req resource.ConfigureReq
 }
 
 func (r *IndexResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
+	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
+
 		var data IndexResourceModel
 
 		// Read Terraform plan data into the model
@@ -179,8 +193,13 @@ func (r *IndexResource) Create(ctx context.Context, req resource.CreateRequest, 
 }
 
 func (r *IndexResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
+	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
+
 		var data IndexResourceModel
 		// Read Terraform prior state data into the model
 		resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -213,8 +232,13 @@ func (r *IndexResource) Update(ctx context.Context, req resource.UpdateRequest, 
 }
 
 func (r *IndexResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	client := r.config.Client.WithContext(ctx).WithLogger(r.config.Logger)
+	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
+
 		var data IndexResourceModel
 
 		// Read Terraform prior state data into the model

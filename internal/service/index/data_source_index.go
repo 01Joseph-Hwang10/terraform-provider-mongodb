@@ -6,6 +6,7 @@ package index
 import (
 	"context"
 
+	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
@@ -102,8 +103,13 @@ func (d *IndexDataSource) Configure(ctx context.Context, req datasource.Configur
 }
 
 func (d *IndexDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	client := d.config.Client.WithContext(ctx).WithLogger(d.config.Logger)
+	client := mongoclient.New(ctx, d.config.ClientConfig).WithLogger(d.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
+		if err != nil {
+			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			return
+		}
+
 		var data IndexDataSourceModel
 
 		// Read Terraform prior state data into the model
