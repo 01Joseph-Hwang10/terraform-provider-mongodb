@@ -219,7 +219,7 @@ func (i *Index) EnsureExistance() error {
 		return errors.New("unexpected error: field and direction must be set")
 	}
 	name, err := i.collection.Indexes().CreateOne(i.ctx, mongo.IndexModel{
-		Keys:    bson.M{i.field: i.direction},
+		Keys:    bson.D{{i.field, i.direction}},
 		Options: options.Index().SetUnique(i.unique),
 	})
 	if err != nil {

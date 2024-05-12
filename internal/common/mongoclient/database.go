@@ -77,7 +77,7 @@ func (d *Database) EnsureExistance() error {
 }
 
 func (d *Database) Exists() (bool, error) {
-	names, err := d.client.ListDatabaseNames(d.ctx, bson.M{"name": d.name})
+	names, err := d.client.ListDatabaseNames(d.ctx, bson.D{{"name", d.name}})
 	if err != nil {
 		return false, err
 	}
@@ -90,7 +90,15 @@ func (d *Database) Drop() error {
 }
 
 func (d *Database) IsEmpty() (bool, error) {
-	collections, err := d.database.ListCollectionNames(d.ctx, bson.M{"name": bson.M{"$ne": PlaceholderCollectionName}})
+	collections, err := d.database.ListCollectionNames(
+		d.ctx,
+		bson.D{
+			{
+				"name",
+				bson.D{{"$ne", PlaceholderCollectionName}},
+			},
+		},
+	)
 	if err != nil {
 		return false, err
 	}

@@ -63,7 +63,7 @@ func (c *Collection) WithLogger(logger *zap.Logger) *Collection {
 }
 
 func (c *Collection) Exists() (bool, error) {
-	names, err := c.database.ListCollectionNames(c.ctx, bson.M{"name": c.name})
+	names, err := c.database.ListCollectionNames(c.ctx, bson.D{{"name", c.name}})
 	if err != nil {
 		return false, err
 	}
@@ -94,7 +94,7 @@ func (c *Collection) Drop() error {
 }
 
 func (c *Collection) IsEmpty() (bool, error) {
-	count, err := c.collection.CountDocuments(c.ctx, bson.M{})
+	count, err := c.collection.CountDocuments(c.ctx, bson.D{})
 	if err != nil {
 		return false, err
 	}
@@ -115,7 +115,7 @@ func (c *Collection) FindById(id string, opts *FindByIdOptions) (Document, error
 
 	// Retrieve the document
 	var document Document
-	if err := c.collection.FindOne(c.ctx, bson.M{"_id": oid}).Decode(&document); err != nil {
+	if err := c.collection.FindOne(c.ctx, bson.D{{"_id", oid}}).Decode(&document); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
@@ -148,7 +148,7 @@ func (c *Collection) UpdateByID(id string, update Document) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.collection.UpdateOne(c.ctx, bson.M{"_id": oid}, update)
+	_, err = c.collection.UpdateOne(c.ctx, bson.D{{"_id", oid}}, update)
 	return err
 }
 
@@ -157,6 +157,6 @@ func (c *Collection) DeleteByID(id string) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.collection.DeleteOne(c.ctx, bson.M{"_id": oid})
+	_, err = c.collection.DeleteOne(c.ctx, bson.D{{"_id", oid}})
 	return err
 }
