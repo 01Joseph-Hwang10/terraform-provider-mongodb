@@ -2,11 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.1.5] - 2024-05-12
+
+### 🐛 Bug Fixes
+
+- Crud index resource && mongo client connection error ([72fc129](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/72fc1297751feb1eca7c996b31f61b9ed62490b4))
+
+- Crud index resource && mongo client connection error ([b01f134](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/b01f134762807de7564a4e9afd213958a46f2990))
+
 
 ### ⚙️ Miscellaneous Tasks
 
 - Update CHANGELOG.md ([e42b27e](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/e42b27e58c05dab38ab40879a6d0e943e9589418))
+
+- Update CHANGELOG.md [no ci] ([02835a0](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/02835a04fea7fb43223ac465f06d4ab45780849d))
+
+- Update CHANGELOG.md [no ci] ([1812551](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/1812551af461363688deca0989721b87557e41a4))
 
 
 ## [0.1.4] - 2024-05-12
