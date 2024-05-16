@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2024-05-16
+
+### 🚀 Features
+
+- Add support for ejson ([79f6bcc](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/79f6bcc105b3508cc0a6d94f175a39ea1b0ae5af))
+
+
+### ⚙️ Miscellaneous Tasks
+
+- Update CHANGELOG.md ([a66ef84](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/a66ef84c490549e445f4d057debe0467fd219057))
+
+- Make the linter happy ([8bf76fc](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/8bf76fce327b601ebc4618d2e643adee42e97701))
+
+
 ## [0.1.5] - 2024-05-12
 
 ### 🐛 Bug Fixes
