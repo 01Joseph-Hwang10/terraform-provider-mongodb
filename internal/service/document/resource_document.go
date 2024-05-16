@@ -109,6 +109,8 @@ func (r *DocumentResource) Schema(ctx context.Context, req resource.SchemaReques
 						%s function:
 
 						%s
+
+						[EJSON](https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/#std-label-mongodb-extended-json-v2) is supported in this attribute.
 					`,
 					mdutils.InlineCodeBlock("jsonencode"),
 					mdutils.CodeBlock("terraform", "document = jsonencode({ key = \"value\" })"),

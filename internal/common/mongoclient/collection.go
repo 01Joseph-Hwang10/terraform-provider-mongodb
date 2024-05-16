@@ -136,10 +136,16 @@ func (c *Collection) FindById(id string, opts *FindByIdOptions) (Document, error
 }
 
 func (c *Collection) InsertOne(document Document) (string, error) {
-	res, err := c.collection.InsertOne(c.ctx, document)
+	bsonDoc, err := document.ToBson()
 	if err != nil {
 		return "", err
 	}
+
+	res, err := c.collection.InsertOne(c.ctx, bsonDoc)
+	if err != nil {
+		return "", err
+	}
+
 	oid, ok := res.InsertedID.(primitive.ObjectID)
 	if !ok {
 		return "", errors.New("failed to convert InsertedID to ObjectID")
@@ -148,13 +154,18 @@ func (c *Collection) InsertOne(document Document) (string, error) {
 }
 
 func (c *Collection) UpdateByID(id string, update Document) error {
+	bsonDoc, err := update.ToBson()
+	if err != nil {
+		return err
+	}
+
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
 
 	filter := bson.D{{Key: "_id", Value: oid}}
-	_, err = c.collection.UpdateOne(c.ctx, filter, bson.D{{Key: "$set", Value: update}})
+	_, err = c.collection.UpdateOne(c.ctx, filter, bson.D{{Key: "$set", Value: bsonDoc}})
 	return err
 }
 

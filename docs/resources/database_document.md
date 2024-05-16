@@ -43,7 +43,7 @@ resource "mongodb_database_document" "first_user" {
 
 - `collection` (String) Name of the collection to create the document in.
 - `database` (String) Name of the database to create the collection in.
-- `document` (String) <p>Document to insert into the collection.</p>  <p>The value of this attribute is a stringified JSON. Note that you should escape every double quote in the JSON string.</p>  <p>In terraform, you can achieve this by simply using the <code>jsonencode</code> function:</p>  <pre><code class="language-terraform">document = jsonencode({ key = "value" })</code></pre>
+- `document` (String) <p>Document to insert into the collection.</p>  <p>The value of this attribute is a stringified JSON. Note that you should escape every double quote in the JSON string.</p>  <p>In terraform, you can achieve this by simply using the <code>jsonencode</code> function:</p>  <pre><code class="language-terraform">document = jsonencode({ key = "value" })</code></pre>  <p><a href="https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/#std-label-mongodb-extended-json-v2" target="_blank">EJSON</a> is supported in this attribute.</p>
 
 ### Read-Only
 

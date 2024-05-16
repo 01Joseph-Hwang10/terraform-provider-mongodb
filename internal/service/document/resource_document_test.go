@@ -53,7 +53,10 @@ func TestAccDocumentResource_Lifecycle(t *testing.T) {
 						{
 							\"three\":3
 						}
-					]
+					],
+					\"date\":{
+						\"$date\":\"2021-01-01T00:00:00Z\"
+					}
 				}
 			}
 		`

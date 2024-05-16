@@ -54,18 +54,12 @@ func dataSourceRead(client *mongoclient.MongoClient, data *DocumentDataSourceMod
 	}
 
 	// Set document
-	encoded, err := json.Marshal(document)
+	encoded, err := document.ToEJson()
 	if err != nil {
-		diags.AddError(
-			errornames.InvalidJSONInput,
-			errorutils.NewInvalidJSONInputError(
-				err,
-				string(encoded),
-			),
-		)
+		diags.AddError(errornames.EJsonParseError, err.Error())
 		return diags
 	}
-	data.Document = basetypes.NewStringValue(string(encoded))
+	data.Document = basetypes.NewStringValue(encoded)
 
 	// Set resource Id
 	resourceId, err := CreateResourceId(data.Database, data.Collection, data.DocumentId)

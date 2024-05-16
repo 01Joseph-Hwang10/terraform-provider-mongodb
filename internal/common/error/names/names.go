@@ -6,6 +6,7 @@ package errornames
 const (
 	// MongoDB Errors.
 	MongoClientError   = "Mongo Client Error"
+	EJsonParseError    = "EJson Parse Error"
 	DatabaseNotFound   = "Database Not Found"
 	CollectionNotFound = "Collection Not Found"
 	IndexNotFound      = "Index Not Found"
