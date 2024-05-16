@@ -13,7 +13,7 @@ type Documents []Document
 
 type Document map[string]interface{}
 
-// Converts extended json to bson
+// Converts extended json to bson.
 func (d *Document) ToBson() (bson.D, error) {
 	b, err := json.Marshal(d)
 	if err != nil {
