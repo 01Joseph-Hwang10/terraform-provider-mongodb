@@ -6,7 +6,7 @@ package document
 import (
 	"context"
 
-	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
+	errs "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
@@ -135,7 +135,9 @@ func (r *DocumentResource) Create(ctx context.Context, req resource.CreateReques
 	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
-			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			resp.Diagnostics.Append(
+				errs.NewMongoClientError(err).ToDiagnostic(),
+			)
 			return
 		}
 		var data DocumentResourceModel
@@ -161,7 +163,9 @@ func (r *DocumentResource) Read(ctx context.Context, req resource.ReadRequest, r
 	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
-			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			resp.Diagnostics.Append(
+				errs.NewMongoClientError(err).ToDiagnostic(),
+			)
 			return
 		}
 
@@ -188,7 +192,9 @@ func (r *DocumentResource) Update(ctx context.Context, req resource.UpdateReques
 	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
-			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			resp.Diagnostics.Append(
+				errs.NewMongoClientError(err).ToDiagnostic(),
+			)
 			return
 		}
 
@@ -215,7 +221,9 @@ func (r *DocumentResource) Delete(ctx context.Context, req resource.DeleteReques
 	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
-			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			resp.Diagnostics.Append(
+				errs.NewMongoClientError(err).ToDiagnostic(),
+			)
 			return
 		}
 
@@ -235,19 +243,27 @@ func (r *DocumentResource) Delete(ctx context.Context, req resource.DeleteReques
 func (r *DocumentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	id, err := resourceid.New(req.ID)
 	if err != nil {
-		resp.Diagnostics.AddError(errornames.InvalidImportID, err.Error())
+		resp.Diagnostics.Append(
+			errs.NewInvalidImportID(err.Error()).ToDiagnostic(),
+		)
 		return
 	}
 	if id.Database() == "" {
-		resp.Diagnostics.AddError(errornames.InvalidImportID, "Database name is required")
+		resp.Diagnostics.Append(
+			errs.NewInvalidImportID("Database name is required").ToDiagnostic(),
+		)
 		return
 	}
 	if id.Collection() == "" {
-		resp.Diagnostics.AddError(errornames.InvalidImportID, "Collection name is required")
+		resp.Diagnostics.Append(
+			errs.NewInvalidImportID("Collection name is required").ToDiagnostic(),
+		)
 		return
 	}
 	if id.Document() == "" {
-		resp.Diagnostics.AddError(errornames.InvalidImportID, "Document ID is required")
+		resp.Diagnostics.Append(
+			errs.NewInvalidImportID("Document ID is required").ToDiagnostic(),
+		)
 		return
 	}
 

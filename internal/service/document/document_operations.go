@@ -7,8 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
-	errorutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/utils"
+	errs "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/collection"
@@ -45,18 +44,24 @@ func dataSourceRead(client *mongoclient.MongoClient, data *DocumentDataSourceMod
 	// Read the document
 	document, err := collection.FindById(data.DocumentId.ValueString(), nil)
 	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 	if document == nil {
-		diags.AddError(errornames.DocumentNotFound, "Document not found")
+		diags.Append(
+			errs.NewDocumentNotFound(data.DocumentId.ValueString()).ToDiagnostic(),
+		)
 		return diags
 	}
 
 	// Set document
 	encoded, err := document.ToEJson()
 	if err != nil {
-		diags.AddError(errornames.EJsonParseError, err.Error())
+		diags.Append(
+			errs.NewEJsonParseError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 	data.Document = basetypes.NewStringValue(encoded)
@@ -64,7 +69,9 @@ func dataSourceRead(client *mongoclient.MongoClient, data *DocumentDataSourceMod
 	// Set resource Id
 	resourceId, err := CreateResourceId(data.Database, data.Collection, data.DocumentId)
 	if err != nil {
-		diags.AddError(errornames.InvalidResourceConfiguration, err.Error())
+		diags.Append(
+			errs.NewInvalidResourceConfiguration(err.Error()).ToDiagnostic(),
+		)
 		return diags
 	}
 	data.Id = resourceId
@@ -98,12 +105,8 @@ func resourceRead(client *mongoclient.MongoClient, r *DocumentResourceModel) dia
 	var document mongoclient.Document
 	rawDocument := d.Document.ValueString()
 	if err := json.Unmarshal([]byte(rawDocument), &document); err != nil {
-		diags.AddError(
-			errornames.InvalidJSONInput,
-			errorutils.NewInvalidJSONInputError(
-				err,
-				rawDocument,
-			),
+		diags.Append(
+			errs.NewInvalidJSONDocument(err.Error(), rawDocument).ToDiagnostic(),
 		)
 		return diags
 	}
@@ -121,27 +124,21 @@ func resourceRead(client *mongoclient.MongoClient, r *DocumentResourceModel) dia
 	var expected mongoclient.Document
 	rawExpected := r.Document.ValueString()
 	if err := json.Unmarshal([]byte(rawExpected), &expected); err != nil {
-		diags.AddError(
-			errornames.InvalidJSONInput,
-			errorutils.NewInvalidJSONInputError(
-				err,
-				rawExpected,
-			),
+		diags.Append(
+			errs.NewInvalidJSONDocument(err.Error(), rawExpected).ToDiagnostic(),
 		)
 		return diags
 	}
 	patch, err := jsondiff.Compare(document, expected)
 	if err != nil {
-		diags.AddError(
-			errornames.UnexpectedError,
-			err.Error(),
+		diags.Append(
+			errs.NewUnexpectedError(err).ToDiagnostic(),
 		)
 		return diags
 	}
 	if patch.String() != "" {
-		diags.AddError(
-			errornames.InconsistentDocument,
-			fmt.Sprintf("Document is inconsistent with the data source: %s", patch.String()),
+		diags.Append(
+			errs.NewInconsistentDocument(patch.String()).ToDiagnostic(),
 		)
 		return diags
 	}
@@ -149,7 +146,9 @@ func resourceRead(client *mongoclient.MongoClient, r *DocumentResourceModel) dia
 	// Set resource Id
 	resourceId, err := CreateResourceId(r.Database, r.Collection, r.DocumentId)
 	if err != nil {
-		diags.AddError(errornames.InvalidResourceConfiguration, err.Error())
+		diags.Append(
+			errs.NewInvalidResourceConfiguration(err.Error()).ToDiagnostic(),
+		)
 		return diags
 	}
 	r.Id = resourceId
@@ -176,18 +175,16 @@ func resourceCreate(client *mongoclient.MongoClient, data *DocumentResourceModel
 	var document mongoclient.Document
 	rawDocument := data.Document.ValueString()
 	if err := json.Unmarshal([]byte(rawDocument), &document); err != nil {
-		diags.AddError(
-			errornames.InvalidJSONInput,
-			errorutils.NewInvalidJSONInputError(
-				err,
-				rawDocument,
-			),
+		diags.Append(
+			errs.NewInvalidJSONDocument(err.Error(), rawDocument).ToDiagnostic(),
 		)
 		return diags
 	}
 	oid, err := collection.InsertOne(document)
 	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 
@@ -221,17 +218,15 @@ func resourceUpdate(client *mongoclient.MongoClient, data *DocumentResourceModel
 	var document mongoclient.Document
 	rawDocument := data.Document.ValueString()
 	if err := json.Unmarshal([]byte(rawDocument), &document); err != nil {
-		diags.AddError(
-			errornames.InvalidJSONInput,
-			errorutils.NewInvalidJSONInputError(
-				err,
-				rawDocument,
-			),
+		diags.Append(
+			errs.NewInvalidJSONDocument(err.Error(), rawDocument).ToDiagnostic(),
 		)
 		return diags
 	}
 	if err := collection.UpdateByID(data.DocumentId.ValueString(), document); err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 
@@ -251,7 +246,9 @@ func resourceDelete(client *mongoclient.MongoClient, data *DocumentResourceModel
 	database := client.Database(data.Database.ValueString())
 	exists, err := database.Exists()
 	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 	if !exists {
@@ -264,7 +261,9 @@ func resourceDelete(client *mongoclient.MongoClient, data *DocumentResourceModel
 	collection := database.Collection(data.Collection.ValueString())
 	exists, err = collection.Exists()
 	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 	if !exists {
@@ -274,7 +273,9 @@ func resourceDelete(client *mongoclient.MongoClient, data *DocumentResourceModel
 
 	// Delete the document
 	if err := collection.DeleteByID(data.DocumentId.ValueString()); err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 

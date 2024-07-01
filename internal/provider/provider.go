@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"go.uber.org/zap"
 
-	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
+	errs "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
@@ -90,7 +90,9 @@ func (p *MongoProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	// Prepare the logger
 	logger, err := configureLogger(p)
 	if err != nil {
-		resp.Diagnostics.AddError(errornames.UnexpectedError, err.Error())
+		resp.Diagnostics.Append(
+			errs.NewUnexpectedError(err).ToDiagnostic(),
+		)
 		return
 	}
 

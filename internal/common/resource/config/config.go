@@ -6,7 +6,7 @@ package resourceconfig
 import (
 	"fmt"
 
-	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
+	errs "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"go.uber.org/zap"
@@ -25,25 +25,31 @@ func FromProviderData(data any) (config *ResourceConfig, diags diag.Diagnostics)
 
 	providerData, ok := data.(*ResourceConfig)
 	if !ok {
-		diags.AddError(
-			errornames.UnexpectedResourceConfigurationType,
-			fmt.Sprintf("Expected *resourceconfig.ResourceConfig, got: %T. Please report this issue to the provider developers.", data),
+		diags.Append(
+			errs.NewUnexpectedResourceConfigurationType(
+				"*resourceconfig.ResourceConfig",
+				fmt.Sprintf("%T", data),
+			).ToDiagnostic(),
 		)
 		return nil, diags
 	}
 
 	if providerData.ClientConfig == nil {
-		diags.AddError(
-			errornames.UnexpectedResourceConfigurationType,
-			"Expected *mongoclient.Config, got nil. Please report this issue to the provider developers.",
+		diags.Append(
+			errs.NewUnexpectedResourceConfigurationType(
+				"*mongoclient.Config",
+				fmt.Sprintf("%T", nil),
+			).ToDiagnostic(),
 		)
 		return nil, diags
 	}
 
 	if providerData.Logger == nil {
-		diags.AddError(
-			errornames.UnexpectedResourceConfigurationType,
-			"Expected *zap.Logger, got nil. Please report this issue to the provider developers.",
+		diags.Append(
+			errs.NewUnexpectedResourceConfigurationType(
+				"*zap.Logger",
+				fmt.Sprintf("%T", nil),
+			).ToDiagnostic(),
 		)
 		return nil, diags
 	}

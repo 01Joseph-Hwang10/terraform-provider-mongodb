@@ -6,7 +6,7 @@ package index
 import (
 	"fmt"
 
-	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
+	errs "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/collection"
@@ -27,7 +27,9 @@ func dataSourceRead(client *mongoclient.MongoClient, data *IndexDataSourceModel)
 	var diags diag.Diagnostics
 
 	if !client.IsConnected() {
-		diags.AddError(errornames.MongoClientError, "Client is not connected")
+		diags.Append(
+			errs.NewClientIsNotConnected().ToDiagnostic(),
+		)
 		return diags
 	}
 
@@ -47,13 +49,14 @@ func dataSourceRead(client *mongoclient.MongoClient, data *IndexDataSourceModel)
 	index := collection.Index(data.IndexName.ValueString())
 	spec, err := index.GetSpec()
 	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 	if spec == nil {
-		diags.AddError(
-			errornames.IndexNotFound,
-			fmt.Sprintf("Index %s not found", data.IndexName.ValueString()),
+		diags.Append(
+			errs.NewIndexNotFound(data.IndexName.ValueString()).ToDiagnostic(),
 		)
 		return diags
 	}
@@ -64,7 +67,9 @@ func dataSourceRead(client *mongoclient.MongoClient, data *IndexDataSourceModel)
 	// Set resource Id
 	resourceId, err := CreateResourceId(data.Database, data.Collection, data.IndexName)
 	if err != nil {
-		diags.AddError(errornames.InvalidResourceConfiguration, err.Error())
+		diags.Append(
+			errs.NewInvalidResourceConfiguration(err.Error()).ToDiagnostic(),
+		)
 		return diags
 	}
 
@@ -127,7 +132,9 @@ func resourceCreate(client *mongoclient.MongoClient, data *IndexResourceModel) d
 	unique := data.Unique.ValueBool()
 	index := collection.IndexFromField(field, direction, unique)
 	if err := index.EnsureExistance(); err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 
@@ -156,7 +163,9 @@ func resourceDelete(client *mongoclient.MongoClient, data *IndexResourceModel) d
 	database := client.Database(data.Database.ValueString())
 	exists, err := database.Exists()
 	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 	if !exists {
@@ -169,7 +178,9 @@ func resourceDelete(client *mongoclient.MongoClient, data *IndexResourceModel) d
 	collection := database.Collection(data.Collection.ValueString())
 	exists, err = collection.Exists()
 	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 	if !exists {
@@ -179,9 +190,8 @@ func resourceDelete(client *mongoclient.MongoClient, data *IndexResourceModel) d
 
 	// If force destroy is not set, fail the deletion
 	if !data.ForceDestroy.ValueBool() {
-		diags.AddError(
-			errornames.IndexDeletionForbidden,
-			"Index deletion is not allowed by default. Set force_destroy to true to delete the index.",
+		diags.Append(
+			errs.NewIndexDeletionForbidden().ToDiagnostic(),
 		)
 		return diags
 	}
@@ -189,7 +199,9 @@ func resourceDelete(client *mongoclient.MongoClient, data *IndexResourceModel) d
 	// Delete the index
 	index := collection.Index(data.IndexName.ValueString())
 	if err := index.Drop(); err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 

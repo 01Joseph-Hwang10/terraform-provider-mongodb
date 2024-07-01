@@ -6,7 +6,7 @@ package index
 import (
 	"context"
 
-	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
+	errs "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
@@ -38,5 +38,7 @@ func (v *isDirection) ValidateInt64(ctx context.Context, req validator.Int64Requ
 		return
 	}
 
-	resp.Diagnostics.AddError(errornames.InvalidInputValue, description)
+	resp.Diagnostics.Append(
+		errs.NewInvalidInputValue(description).ToDiagnostic(),
+	)
 }

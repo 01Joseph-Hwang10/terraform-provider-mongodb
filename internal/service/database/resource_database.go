@@ -6,7 +6,7 @@ package database
 import (
 	"context"
 
-	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
+	errs "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
@@ -127,7 +127,9 @@ func (r *DatabaseResource) Create(ctx context.Context, req resource.CreateReques
 	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
-			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			resp.Diagnostics.Append(
+				errs.NewMongoClientError(err).ToDiagnostic(),
+			)
 			return
 		}
 
@@ -154,7 +156,9 @@ func (r *DatabaseResource) Read(ctx context.Context, req resource.ReadRequest, r
 	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
-			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			resp.Diagnostics.Append(
+				errs.NewMongoClientError(err).ToDiagnostic(),
+			)
 			return
 		}
 
@@ -194,7 +198,9 @@ func (r *DatabaseResource) Delete(ctx context.Context, req resource.DeleteReques
 	client := mongoclient.New(ctx, r.config.ClientConfig).WithLogger(r.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
-			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			resp.Diagnostics.Append(
+				errs.NewMongoClientError(err).ToDiagnostic(),
+			)
 			return
 		}
 
@@ -214,11 +220,15 @@ func (r *DatabaseResource) Delete(ctx context.Context, req resource.DeleteReques
 func (r *DatabaseResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	id, err := resourceid.New(req.ID)
 	if err != nil {
-		resp.Diagnostics.AddError(errornames.InvalidImportID, err.Error())
+		resp.Diagnostics.Append(
+			errs.NewInvalidImportID(err.Error()).ToDiagnostic(),
+		)
 		return
 	}
 	if id.Database() == "" {
-		resp.Diagnostics.AddError(errornames.InvalidImportID, "Database name is required")
+		resp.Diagnostics.Append(
+			errs.NewInvalidImportID("database name is required").ToDiagnostic(),
+		)
 		return
 	}
 

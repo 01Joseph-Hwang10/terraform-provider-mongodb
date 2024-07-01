@@ -6,7 +6,7 @@ package index
 import (
 	"context"
 
-	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
+	errs "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
@@ -106,7 +106,9 @@ func (d *IndexDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	client := mongoclient.New(ctx, d.config.ClientConfig).WithLogger(d.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
-			resp.Diagnostics.AddError(errornames.MongoClientError, err.Error())
+			resp.Diagnostics.Append(
+				errs.NewMongoClientError(err).ToDiagnostic(),
+			)
 			return
 		}
 

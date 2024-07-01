@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"testing"
 
-	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
+	errs "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/provider"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/acc"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/testutil/mongolocal"
@@ -185,7 +185,7 @@ func TestAccIndexResource_ForceDestroy(t *testing.T) {
 				{
 					Config:      acc.ProviderConfig(server.URI()),
 					Destroy:     true,
-					ExpectError: regexp.MustCompile(errornames.IndexDeletionForbidden),
+					ExpectError: regexp.MustCompile(errs.NewIndexDeletionForbidden().Name()),
 				},
 				// Update the resource to force destroy
 				{

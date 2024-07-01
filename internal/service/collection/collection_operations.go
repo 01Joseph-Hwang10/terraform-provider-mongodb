@@ -6,7 +6,7 @@ package collection
 import (
 	"fmt"
 
-	errornames "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error/names"
+	errs "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/mongoclient"
 	resourceid "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/id"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/database"
@@ -18,11 +18,15 @@ func CheckExistance(database *mongoclient.Database, name string, diags *diag.Dia
 	collection := database.Collection(name)
 	exists, err := database.Exists()
 	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return nil
 	}
 	if !exists {
-		diags.AddError(errornames.CollectionNotFound, fmt.Sprintf("Collection %s not found", name))
+		diags.Append(
+			errs.NewCollectionNotFound(collection.Name()).ToDiagnostic(),
+		)
 		return nil
 	}
 	return collection
@@ -54,7 +58,9 @@ func dataSourceRead(client *mongoclient.MongoClient, data *CollectionDataSourceM
 	// Set resource Id
 	resourceId, err := CreateResourceId(data.Database, data.Name)
 	if err != nil {
-		diags.AddError(errornames.InvalidResourceConfiguration, err.Error())
+		diags.Append(
+			errs.NewInvalidResourceConfiguration(err.Error()).ToDiagnostic(),
+		)
 		return diags
 	}
 	data.Id = resourceId
@@ -93,7 +99,9 @@ func resourceCreate(client *mongoclient.MongoClient, data *CollectionResourceMod
 	// Create the collection
 	collection := database.Collection(data.Name.ValueString())
 	if err := collection.EnsureExistance(); err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 
@@ -113,7 +121,9 @@ func resourceDelete(client *mongoclient.MongoClient, data *CollectionResourceMod
 	database := client.Database(data.Database.ValueString())
 	exists, err := database.Exists()
 	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 	if !exists {
@@ -126,7 +136,9 @@ func resourceDelete(client *mongoclient.MongoClient, data *CollectionResourceMod
 	collection := database.Collection(data.Name.ValueString())
 	exists, err = collection.Exists()
 	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 	if !exists {
@@ -137,17 +149,23 @@ func resourceDelete(client *mongoclient.MongoClient, data *CollectionResourceMod
 	// Check if the collection is empty
 	isEmpty, err := collection.IsEmpty()
 	if err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 	if !isEmpty && !data.ForceDestroy.ValueBool() {
-		diags.AddError(errornames.CollectionNotEmpty, "Collection contains data. Set force_destroy to true to delete the collection.")
+		diags.Append(
+			errs.NewCollectionNotEmpty(collection.Name()).ToDiagnostic(),
+		)
 		return diags
 	}
 
 	// Delete the collection
 	if err := collection.Drop(); err != nil {
-		diags.AddError(errornames.MongoClientError, err.Error())
+		diags.Append(
+			errs.NewMongoClientError(err).ToDiagnostic(),
+		)
 		return diags
 	}
 
