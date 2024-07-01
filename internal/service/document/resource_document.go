@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -35,11 +37,12 @@ type DocumentResource struct {
 
 // DocumentResourceModel describes the resource data model.
 type DocumentResourceModel struct {
-	Id         types.String `tfsdk:"id"`
-	Database   types.String `tfsdk:"database"`
-	Collection types.String `tfsdk:"collection"`
-	DocumentId types.String `tfsdk:"document_id"`
-	Document   types.String `tfsdk:"document"`
+	Id               types.String `tfsdk:"id"`
+	Database         types.String `tfsdk:"database"`
+	Collection       types.String `tfsdk:"collection"`
+	DocumentId       types.String `tfsdk:"document_id"`
+	Document         types.String `tfsdk:"document"`
+	SyncWithDatabase types.Bool   `tfsdk:"sync_with_database"`
 }
 
 func (r *DocumentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -116,6 +119,42 @@ func (r *DocumentResource) Schema(ctx context.Context, req resource.SchemaReques
 					mdutils.CodeBlock("terraform", "document = jsonencode({ key = \"value\" })"),
 				),
 				Required: true,
+			},
+			"sync_with_database": schema.BoolAttribute{
+				Computed: true,
+				Optional: true,
+				Default:  booldefault.StaticBool(true),
+				MarkdownDescription: mdutils.FormatSchemaDescription(`
+					If this option is true, the provider will ensure that 
+					the document in the Terraform state is in sync with the
+					document in the database. In other words, it will ensure
+					the data consistency between the document in the Terraform
+					state and the document in the database. This means that 
+					the provider will fail to go through plan or apply stages
+					if the document in the database is different from the document
+					in the Terraform state.
+
+					In contrast, if this option is false, the provider will
+					ignore the consistency between the document in the Terraform
+					state and the document in the database.
+
+					This is useful when you want to manage the document whose counterpart
+					in the database is managed by another system 
+					(i.e. the document can be changed by other systems than Terraform) 
+					but still want to perform CRUD operations on the document in the database with Terraform.
+
+					It is IMPORTANT to note that if you once set this option either to true or false,
+					you cannot change it back to the other value. 
+					This is due to [terraform SDKv2's data consistency rules](https://developer.hashicorp.com/terraform/plugin/sdkv2/resources/data-consistency-errors), 
+					keeping the resource state immutable once you set the value from the terraform side, 
+					and it is impossible to modify the value from the provider side 
+					if there are differences between the state and the database document.
+
+					This value is true by default.
+				`),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -203,6 +242,25 @@ func (r *DocumentResource) Update(ctx context.Context, req resource.UpdateReques
 		// Read Terraform plan data into the model
 		resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		var state DocumentResourceModel
+
+		// Read Terraform prior state data into the model
+		resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// If the sync_with_database attribute differs
+		// between the plan and the state, return an error
+		if state.SyncWithDatabase.ValueBool() != data.SyncWithDatabase.ValueBool() {
+			resp.Diagnostics.Append(
+				errs.NewInvalidResourceConfiguration(
+					"sync_with_database attribute cannot be changed once set",
+				).ToDiagnostic(),
+			)
 			return
 		}
 

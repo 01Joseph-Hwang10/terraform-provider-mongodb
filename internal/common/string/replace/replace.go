@@ -19,30 +19,30 @@ func NewReplacement(oldStr string, newStr string) replacement {
 	}
 }
 
-type replaceChain struct {
+type ReplaceChain struct {
 	replacements []replacement
 }
 
-func NewChain(replacements ...replacement) *replaceChain {
-	return &replaceChain{
+func NewChain(replacements ...replacement) *ReplaceChain {
+	return &ReplaceChain{
 		replacements: replacements,
 	}
 }
 
-func (c *replaceChain) Apply(s string) string {
+func (c *ReplaceChain) Apply(s string) string {
 	for _, r := range c.replacements {
 		s = strings.Replace(s, r.old, r.new, -1)
 	}
 	return s
 }
 
-func (c *replaceChain) Copy() *replaceChain {
-	return &replaceChain{
+func (c *ReplaceChain) Copy() *ReplaceChain {
+	return &ReplaceChain{
 		replacements: append([]replacement{}, c.replacements...),
 	}
 }
 
-func (c *replaceChain) Extend(replacements ...replacement) *replaceChain {
+func (c *ReplaceChain) Extend(replacements ...replacement) *ReplaceChain {
 	c.replacements = append(c.replacements, replacements...)
 	return c
 }

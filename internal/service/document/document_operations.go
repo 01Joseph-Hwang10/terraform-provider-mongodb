@@ -101,6 +101,32 @@ func resourceRead(client *mongoclient.MongoClient, r *DocumentResourceModel) dia
 		r.Document = d.Document
 	}
 
+	// Validate document consistency
+	// Document consistency validation is only performed
+	// when SyncWithDatabase is enabled.
+	if r.SyncWithDatabase.ValueBool() {
+		diags.Append(validateDocumentConsistency(r, &d)...)
+		if diags.HasError() {
+			return diags
+		}
+	}
+
+	// Set resource Id
+	resourceId, err := CreateResourceId(r.Database, r.Collection, r.DocumentId)
+	if err != nil {
+		diags.Append(
+			errs.NewInvalidResourceConfiguration(err.Error()).ToDiagnostic(),
+		)
+		return diags
+	}
+	r.Id = resourceId
+
+	return diags
+}
+
+func validateDocumentConsistency(r *DocumentResourceModel, d *DocumentDataSourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	// Parse document read from the data source
 	var document mongoclient.Document
 	rawDocument := d.Document.ValueString()
@@ -142,16 +168,6 @@ func resourceRead(client *mongoclient.MongoClient, r *DocumentResourceModel) dia
 		)
 		return diags
 	}
-
-	// Set resource Id
-	resourceId, err := CreateResourceId(r.Database, r.Collection, r.DocumentId)
-	if err != nil {
-		diags.Append(
-			errs.NewInvalidResourceConfiguration(err.Error()).ToDiagnostic(),
-		)
-		return diags
-	}
-	r.Id = resourceId
 
 	return diags
 }
