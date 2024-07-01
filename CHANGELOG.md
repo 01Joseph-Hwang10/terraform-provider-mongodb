@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### ⚙️ Miscellaneous Tasks
+
+- Update CHANGELOG.md ([7019d64](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/7019d64462e947421b208e6a4bb3e91305e7ee76))
+
+- V2 goreleaser ([e0cac03](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/e0cac03721c99f83d62fcbd140f86049dc5cf952))
+
+
 ## [0.3.0] - 2024-07-01
 
 ### 🚀 Features
