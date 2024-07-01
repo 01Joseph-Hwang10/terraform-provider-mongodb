@@ -255,7 +255,13 @@ func (r *DocumentResource) Update(ctx context.Context, req resource.UpdateReques
 
 		// If the sync_with_database attribute differs
 		// between the plan and the state, return an error
-		if state.SyncWithDatabase.ValueBool() != data.SyncWithDatabase.ValueBool() {
+		var prevSyncWithDatabase bool
+		if state.SyncWithDatabase.IsNull() || state.SyncWithDatabase.IsUnknown() {
+			prevSyncWithDatabase = true
+		} else {
+			prevSyncWithDatabase = state.SyncWithDatabase.ValueBool()
+		}
+		if prevSyncWithDatabase != data.SyncWithDatabase.ValueBool() {
 			resp.Diagnostics.Append(
 				errs.NewInvalidResourceConfiguration(
 					"sync_with_database attribute cannot be changed once set",
