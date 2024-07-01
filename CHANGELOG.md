@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2024-07-01
+
+### 🐛 Bug Fixes
+
+- Sync with database property checks with previous state properly ([3272d9b](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/3272d9bdb95fbb6aca7c951547739fca0b804e8a))
+
+
+### ⚙️ Miscellaneous Tasks
+
+- Update CHANGELOG.md ([92c3995](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/92c3995d1c71eebb80073866f0ea47684a250094))
+
+
 ## [0.3.0] - 2024-07-01
 
 ### 🚀 Features
