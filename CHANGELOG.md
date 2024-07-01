@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2024-07-01
+
+### 🚀 Features
+
+- Add sync with database option ([49ca4b7](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/49ca4b7667658144c05c9dd6a3dd54df917e8dd3))
+
+
+### 🚜 Refactor
+
+- Errors ([f378eef](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/f378eefa54ce072eaafbbef722f7055e7f83af7e))
+
+
+### ⚙️ Miscellaneous Tasks
+
+- Update CHANGELOG.md ([26526ea](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/26526eafc6ab19f0f8a8d270bf2d1b8d8352c195))
+
+- Improved logging ([f4c7b83](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/f4c7b83f7f9845756a265ea6188f7f2b0654335a))
+
+- Generate docs & lint codes ([aee6b90](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/aee6b9092549a9049762cfb5670e53cdc0820644))
+
+
 ## [0.2.0] - 2024-05-16
 
 ### 🚀 Features
