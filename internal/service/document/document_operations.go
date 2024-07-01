@@ -164,7 +164,11 @@ func validateDocumentConsistency(r *DocumentResourceModel, d *DocumentDataSource
 	}
 	if patch.String() != "" {
 		diags.Append(
-			errs.NewInconsistentDocument(patch.String()).ToDiagnostic(),
+			errs.NewInconsistentDocument(
+				rawDocument,
+				rawExpected,
+				patch.String(),
+			).ToDiagnostic(),
 		)
 		return diags
 	}

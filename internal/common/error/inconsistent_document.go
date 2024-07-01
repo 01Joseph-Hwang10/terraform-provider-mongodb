@@ -9,18 +9,34 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
-func NewInconsistentDocument(data string) *InconsistentDocument {
+func NewInconsistentDocument(base string, compare string, diff string) *InconsistentDocument {
 	return &InconsistentDocument{
-		data: data,
+		base:    base,
+		compare: compare,
+		diff:    diff,
 	}
 }
 
 type InconsistentDocument struct {
-	data string
+	base    string
+	compare string
+	diff    string
 }
 
 func (e *InconsistentDocument) Error() string {
-	return fmt.Sprintf("Document is inconsistent with the data source: %s", e.data)
+	return fmt.Sprintf(`
+Document is inconsistent with the data source.
+
+Base: %s
+
+Compare: %s
+
+Diff: %s
+		`,
+		e.base,
+		e.compare,
+		e.diff,
+	)
 }
 
 func (e *InconsistentDocument) Name() string {
