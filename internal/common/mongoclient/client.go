@@ -41,7 +41,10 @@ func (c *MongoClient) Client() *mongo.Client {
 
 func (c *MongoClient) Connect() error {
 	// Create a new client
-	client, err := mongo.Connect(c.ctx, options.Client().ApplyURI(c.config.URI))
+	client, err := mongo.Connect(
+		c.ctx,
+		options.Client().ApplyURI(c.config.URI),
+	)
 	if err != nil {
 		return err
 	}
@@ -80,5 +83,7 @@ func (c *MongoClient) WithLogger(logger *zap.Logger) *MongoClient {
 func (c *MongoClient) Run(callback func(client *MongoClient, err error)) {
 	err := c.Connect()
 	callback(c, err)
-	c.Disconnect()
+	if c.IsConnected() {
+		c.Disconnect()
+	}
 }
