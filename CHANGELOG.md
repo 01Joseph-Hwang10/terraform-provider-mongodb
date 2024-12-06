@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2024-12-06
+
+### 📚 Documentation
+
+- Correct documents data source documentation ([b373a9e](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/b373a9e509c039d624d7eae186cd8d14b630c16d))
+
+
+### ⚙️ Miscellaneous Tasks
+
+- Update CHANGELOG.md ([aff1396](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/aff1396be92e4781d2efafbc9694c3033156103e))
+
+
 ## [0.4.0] - 2024-12-06
 
 ### 🚀 Features
