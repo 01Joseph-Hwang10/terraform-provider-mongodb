@@ -105,6 +105,33 @@ func (c *Collection) IsEmpty() (bool, error) {
 	return count == 0, nil
 }
 
+func (c *Collection) Find(filter Document) (Documents, error) {
+	bsonFilter, err := filter.ToBson()
+	if err != nil {
+		return nil, err
+	}
+
+	cursor, err := c.collection.Find(c.ctx, bsonFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	var documents Documents
+
+	for cursor.Next(c.ctx) {
+		var document Document
+		if err := cursor.Decode(&document); err != nil {
+			return nil, err
+		}
+		documents = append(documents, document)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return documents, nil
+}
+
 type FindByIdOptions struct {
 	IncludeId bool
 }

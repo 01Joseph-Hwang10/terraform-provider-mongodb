@@ -20,6 +20,7 @@ import (
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/collection"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/database"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/document"
+	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/documents"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/index"
 )
 
@@ -119,6 +120,7 @@ func (p *MongoProvider) DataSources(ctx context.Context) []func() datasource.Dat
 		database.NewDatabaseDataSource,
 		collection.NewCollectionDataSource,
 		document.NewDocumentDataSource,
+		documents.NewDocumentsDataSource,
 		index.NewIndexDataSource,
 	}
 }

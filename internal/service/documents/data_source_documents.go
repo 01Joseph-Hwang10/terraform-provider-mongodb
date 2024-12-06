@@ -1,7 +1,7 @@
 // Copyright (c) 01Joseph-Hwang10
 // SPDX-License-Identifier: MPL-2.0
 
-package document
+package documents
 
 import (
 	"context"
@@ -16,31 +16,30 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &DocumentDataSource{}
+var _ datasource.DataSource = &DocumentsDataSource{}
 
-func NewDocumentDataSource() datasource.DataSource {
-	return &DocumentDataSource{}
+func NewDocumentsDataSource() datasource.DataSource {
+	return &DocumentsDataSource{}
 }
 
-// DocumentDataSource defines the data source implementation.
-type DocumentDataSource struct {
+// DocumentsDataSource defines the data source implementation.
+type DocumentsDataSource struct {
 	config *resourceconfig.ResourceConfig
 }
 
 // DocumentDataSourceModel describes the data source data model.
-type DocumentDataSourceModel struct {
-	Id         types.String `tfsdk:"id"`
+type DocumentsDataSourceModel struct {
 	Database   types.String `tfsdk:"database"`
 	Collection types.String `tfsdk:"collection"`
-	DocumentId types.String `tfsdk:"document_id"`
-	Document   types.String `tfsdk:"document"`
+	Filter     types.String `tfsdk:"filter"`
+	Documents  types.String `tfsdk:"documents"`
 }
 
-func (d *DocumentDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_database_document"
+func (d *DocumentsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_database_documents"
 }
 
-func (d *DocumentDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *DocumentsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: mdutils.FormatResourceDescription(`
 			This resource reads a single document in a collection 
@@ -48,19 +47,6 @@ func (d *DocumentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 		`),
 
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Computed: true,
-				MarkdownDescription: mdutils.FormatSchemaDescription(
-					`
-						Resource identifier.
-						
-						ID has a value with a format of the following:
-
-						%s
-					`,
-					mdutils.CodeBlock("", "databases/<database>/collections/<name>/documents/<document_id>"),
-				),
-			},
 			"database": schema.StringAttribute{
 				Required:            true,
 				MarkdownDescription: "Name of the database to read the collection in.",
@@ -69,25 +55,28 @@ func (d *DocumentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 				Required:            true,
 				MarkdownDescription: "Name of the collection to read the document in.",
 			},
-			"document_id": schema.StringAttribute{
+			"filter": schema.StringAttribute{
 				MarkdownDescription: mdutils.FormatSchemaDescription(
 					`
-						Document ID of the document.
+						Filter to find the document in the collection.
 
-						This value is a stringified MongoDB ObjectID.
+						The value of this attribute is a stringified JSON.
+						Note that you should escape every double quote in the JSON string.
 
-						In golang, you can use the following code to stringify an ObjectID:
+						In terraform, you can achieve this by simply using the 
+						%s function:
 
 						%s
 					`,
-					mdutils.CodeBlock("go", "objectID.(primitive.ObjectID).Hex()"),
+					mdutils.InlineCodeBlock("jsonencode"),
+					mdutils.CodeBlock("terraform", "document = jsonencode({ key = \"value\" })"),
 				),
 				Required: true,
 			},
-			"document": schema.StringAttribute{
+			"documents": schema.StringAttribute{
 				MarkdownDescription: mdutils.FormatSchemaDescription(
 					`
-						Document read from the collection.
+						Documents read from the collection.
 
 						The value of this attribute is a stringified JSON, 
 						with every double quote escaped with a backslash.
@@ -106,7 +95,7 @@ func (d *DocumentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 	}
 }
 
-func (d *DocumentDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *DocumentsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	config, diags := resourceconfig.FromProviderData(req.ProviderData)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -116,7 +105,7 @@ func (d *DocumentDataSource) Configure(ctx context.Context, req datasource.Confi
 	d.config = config
 }
 
-func (d *DocumentDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *DocumentsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	client := mongoclient.New(ctx, d.config.ClientConfig).WithLogger(d.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
@@ -126,7 +115,7 @@ func (d *DocumentDataSource) Read(ctx context.Context, req datasource.ReadReques
 			return
 		}
 
-		var data DocumentDataSourceModel
+		var data DocumentsDataSourceModel
 
 		// Read Terraform prior state data into the model
 		resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
