@@ -3,14 +3,14 @@
 page_title: "mongodb_database_documents Data Source - mongodb"
 subcategory: ""
 description: |-
-  This resource reads a single document in a collection
-  in a database on the MongoDB server.
+  This resource reads a list of documents
+  in a database with a given filter.
 ---
 
 # mongodb_database_documents (Data Source)
 
-This resource reads a single document in a collection 
-in a database on the MongoDB server.
+This resource reads a list of documents 
+in a database with a given filter.
 
 
 
