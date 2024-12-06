@@ -3,7 +3,7 @@
 page_title: "mongodb_database Data Source - mongodb"
 subcategory: ""
 description: |-
-  This resource reads a visible database on the MongoDB server.
+  This data source reads a visible database on the MongoDB server.
   The meaning of visible is that you can get the database information
   with listDatabases https://www.mongodb.com/docs/manual/reference/command/listDatabases/
   command or show dbs https://www.mongodb.com/docs/mongodb-shell/reference/access-mdb-shell-help/#show-available-databases command.
@@ -16,7 +16,7 @@ description: |-
 
 # mongodb_database (Data Source)
 
-This resource reads a visible database on the MongoDB server.
+This data source reads a visible database on the MongoDB server.
 
 The meaning of **visible** is that you can get the database information
 with [listDatabases](https://www.mongodb.com/docs/manual/reference/command/listDatabases/)

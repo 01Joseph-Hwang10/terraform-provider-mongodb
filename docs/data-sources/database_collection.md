@@ -3,12 +3,12 @@
 page_title: "mongodb_database_collection Data Source - mongodb"
 subcategory: ""
 description: |-
-  This resource reads a collection in a database on the MongoDB server.
+  This data source reads a collection in a database on the MongoDB server.
 ---
 
 # mongodb_database_collection (Data Source)
 
-This resource reads a collection in a database on the MongoDB server.
+This data source reads a collection in a database on the MongoDB server.
 
 ## Example Usage
 
