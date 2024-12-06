@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2024-12-06
+
+### 🚀 Features
+
+- Add documents data source ([445e888](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/445e88868189eb1b051e3b0a254739b5716e51d0))
+
+
+### 🐛 Bug Fixes
+
+- Only disconnect if connected ([9d615fa](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/9d615fa769dd5d3347712ccf97ccee8c82845e38))
+
+
+### 📚 Documentation
+
+- Fix data source documentation ([ca7ec14](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/ca7ec140e73ec2b0d10afb965bd3c4f0e1161ce4))
+
+- Generate terraform docs ([d298825](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/d29882594a3d937ec411607daf62614bc18b4786))
+
+
+### ⚙️ Miscellaneous Tasks
+
+- Update CHANGELOG.md ([ea2bfd8](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/ea2bfd8ba6bf4c714fa244241d98109940bb4f59))
+
+
 ## [0.3.1] - 2024-07-01
 
 ### 🐛 Bug Fixes
