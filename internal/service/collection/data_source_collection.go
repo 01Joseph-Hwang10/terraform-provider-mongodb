@@ -41,7 +41,7 @@ func (d *CollectionDataSource) Metadata(ctx context.Context, req datasource.Meta
 func (d *CollectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: mdutils.FormatResourceDescription(`
-			This resource reads a collection in a database on the MongoDB server.
+			This data source reads a collection in a database on the MongoDB server.
 		`),
 
 		Attributes: map[string]schema.Attribute{

@@ -40,7 +40,7 @@ func (d *DatabaseDataSource) Metadata(ctx context.Context, req datasource.Metada
 func (d *DatabaseDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: mdutils.FormatResourceDescription(`
-			This resource reads a visible database on the MongoDB server.
+			This data source reads a visible database on the MongoDB server.
 
 			The meaning of **visible** is that you can get the database information
 			with [listDatabases](https://www.mongodb.com/docs/manual/reference/command/listDatabases/)

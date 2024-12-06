@@ -43,7 +43,7 @@ func (d *DocumentDataSource) Metadata(ctx context.Context, req datasource.Metada
 func (d *DocumentDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: mdutils.FormatResourceDescription(`
-			This resource creates a single document in a collection 
+			This resource reads a single document in a collection 
 			in a database on the MongoDB server.
 		`),
 
