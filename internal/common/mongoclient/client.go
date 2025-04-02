@@ -39,6 +39,10 @@ func (c *MongoClient) Client() *mongo.Client {
 	return c.client
 }
 
+func (c *MongoClient) Context() context.Context {
+	return c.ctx
+}
+
 func (c *MongoClient) Connect() error {
 	// Create a new client
 	client, err := mongo.Connect(
