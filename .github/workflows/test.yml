@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   setup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       run: ${{ steps.decide-run.outputs.run }}
     steps:
@@ -39,7 +39,7 @@ jobs:
     name: Build
     needs: setup
     if: ${{ needs.setup.outputs.run == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -57,7 +57,7 @@ jobs:
   generate:
     needs: setup
     if: ${{ needs.setup.outputs.run == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -81,7 +81,7 @@ jobs:
     name: Terraform Provider Acceptance Tests
     needs: [setup, build]
     if: ${{ needs.setup.outputs.run == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
