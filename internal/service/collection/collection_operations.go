@@ -49,8 +49,17 @@ func dataSourceRead(client *mongoclient.MongoClient, data *CollectionDataSourceM
 		return diags
 	}
 
+	// Validate collection name
+	name := data.Name.ValueString()
+	if name == mongoclient.PlaceholderCollectionName {
+		diags.Append(
+			errs.NewInvalidCollectionName(name).ToDiagnostic(),
+		)
+		return diags
+	}
+
 	// Check if the collection exists
-	CheckExistance(database, data.Name.ValueString(), &diags)
+	CheckExistance(database, name, &diags)
 	if diags.HasError() {
 		return diags
 	}
@@ -96,8 +105,17 @@ func resourceCreate(client *mongoclient.MongoClient, data *CollectionResourceMod
 		return diags
 	}
 
+	// Validate collection name
+	name := data.Name.ValueString()
+	if name == mongoclient.PlaceholderCollectionName {
+		diags.Append(
+			errs.NewInvalidCollectionName(name).ToDiagnostic(),
+		)
+		return diags
+	}
+
 	// Create the collection
-	collection := database.Collection(data.Name.ValueString())
+	collection := database.Collection(name)
 	if err := collection.EnsureExistance(); err != nil {
 		diags.Append(
 			errs.NewMongoClientError(err).ToDiagnostic(),
