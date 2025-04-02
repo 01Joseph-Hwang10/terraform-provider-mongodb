@@ -4,6 +4,7 @@
 package databases
 
 import (
+	"fmt"
 	"regexp"
 
 	errs "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/error"
@@ -11,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func dataSourceRead(client *mongoclient.MongoClient, data *DatabasesDataSourceModel) diag.Diagnostics {
@@ -18,7 +20,7 @@ func dataSourceRead(client *mongoclient.MongoClient, data *DatabasesDataSourceMo
 
 	// Get the list of databases
 	ctx := client.Context()
-	names, err := client.Client().ListDatabaseNames(ctx, nil)
+	names, err := client.Client().ListDatabaseNames(ctx, bson.D{})
 
 	if err != nil {
 		diags.Append(errs.NewMongoClientError(err).ToDiagnostic())
@@ -48,7 +50,7 @@ func dataSourceRead(client *mongoclient.MongoClient, data *DatabasesDataSourceMo
 		database, errs := basetypes.NewObjectValue(
 			DatabaseElementType.AttrTypes,
 			map[string]attr.Value{
-				"id":   basetypes.NewStringValue(name),
+				"id":   basetypes.NewStringValue(fmt.Sprintf("databases/%s", name)),
 				"name": basetypes.NewStringValue(name),
 			},
 		)

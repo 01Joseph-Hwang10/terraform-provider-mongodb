@@ -30,7 +30,7 @@ type DatabasesDataSource struct {
 
 // DocumentDataSourceModel describes the data source data model.
 type DatabasesDataSourceModel struct {
-	Name      types.String `tfsdk:"database"`
+	Name      types.String `tfsdk:"name"`
 	Databases types.List   `tfsdk:"databases"`
 }
 

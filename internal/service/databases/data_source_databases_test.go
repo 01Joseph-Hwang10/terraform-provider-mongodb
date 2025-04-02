@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccDatabaseDataSource(t *testing.T) {
+func TestAccDatabasesDataSource(t *testing.T) {
 	t.Parallel()
 	mongolocal.RunWithServer(t, func(server *mongolocal.MongoLocal) {
 		logger := server.Logger()
@@ -42,7 +42,7 @@ func TestAccDatabaseDataSource(t *testing.T) {
 						}
 						`, server.URI()),
 					Check: resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttr("data.mongodb_databases.test[0]", "id", "databases/test-database"),
+						resource.TestCheckResourceAttr("data.mongodb_databases.test", "databases.0.id", "databases/test-database"),
 					),
 				},
 			},
