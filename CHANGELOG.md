@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2025-04-02
+
+### 🚀 Features
+
+- Add databases data source ([f6aa6bb](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/f6aa6bb255869af2cfff89b8389478b4b1406574))
+
+- Collections data source ([6953996](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/69539961a9ccceb0191d2243dd2e6701cd3ec8cf))
+
+
+### 🐛 Bug Fixes
+
+- Should not create or read a collection having name of placeholder collection name ([56cc440](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/56cc440e50952ddf9d99830d924a232370022d85))
+
+- Test databases data source ([54e8ebb](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/54e8ebb8efa91f95eb06c681cc41eb6b87ecf3a5))
+
+
+### 📚 Documentation
+
+- Generated docs: ([8cea760](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/8cea76031e4240cc31f586d907d780f98fb1c756))
+
+
+### ⚙️ Miscellaneous Tasks
+
+- Update CHANGELOG.md ([6abc6f3](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/6abc6f3647e81fdc55b12b58e735f4e45694b945))
+
+- Fix lint config ([1cc2fe8](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/1cc2fe8d92483510c7117b58f43ed6852b173f56))
+
+- Fix golangci-lint version ([589eea7](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/589eea700ba25411e3b7d44f4152c926db0aebda))
+
+- Fix golangci-lint version ([fde93a3](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/fde93a3754a2653d5529d93cf71ce49c344a57de))
+
+- Fix gh actions runtime version ([473dc71](https://github.com/01Joseph-Hwang10/terraform-provider-mongodb/commit/473dc710310e90e7c00082e1b2845188dba8d2d2))
+
+
 ## [0.4.1] - 2024-12-06
 
 ### 📚 Documentation
