@@ -1,7 +1,7 @@
 // Copyright (c) 01Joseph-Hwang10
 // SPDX-License-Identifier: MPL-2.0
 
-package databases
+package collections
 
 import (
 	"context"
@@ -17,56 +17,62 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &DatabasesDataSource{}
+var _ datasource.DataSource = &CollectionsDataSource{}
 
-func NewDatabasesDataSource() datasource.DataSource {
-	return &DatabasesDataSource{}
+func NewCollectionsDataSource() datasource.DataSource {
+	return &CollectionsDataSource{}
 }
 
-// DatabasesDataSource defines the data source implementation.
-type DatabasesDataSource struct {
+// CollectionsDataSource defines the data source implementation.
+type CollectionsDataSource struct {
 	config *resourceconfig.ResourceConfig
 }
 
 // DocumentDataSourceModel describes the data source data model.
-type DatabasesDataSourceModel struct {
-	Name      types.String `tfsdk:"name"`
-	Databases types.List   `tfsdk:"databases"`
+type CollectionsDataSourceModel struct {
+	Name        types.String `tfsdk:"name"`
+	Database    types.String `tfsdk:"database"`
+	Collections types.List   `tfsdk:"collections"`
 }
 
-var DatabaseElementType = types.ObjectType{
+var CollectionElementType = types.ObjectType{
 	AttrTypes: map[string]attr.Type{
-		"id":   types.StringType,
-		"name": types.StringType,
+		"id":       types.StringType,
+		"database": types.StringType,
+		"name":     types.StringType,
 	},
 }
 
-func (d *DatabasesDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_databases"
+func (d *CollectionsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_database_collections"
 }
 
-func (d *DatabasesDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *CollectionsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: mdutils.FormatResourceDescription(`
-			This resource reads a list of databases 
-			on a cluster.
+			This resource reads a list of collections
+			in a specified database on a cluster.
 		`),
 
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Optional:            true,
-				MarkdownDescription: "Name of databases to read. Regex is supported.",
+				MarkdownDescription: "Name of collections to read. Regex is supported.",
 			},
-			"databases": schema.ListAttribute{
-				ElementType:         DatabaseElementType,
-				MarkdownDescription: "List of database resources. Refer to database data source documentation for more details.",
+			"database": schema.StringAttribute{
+				Required:            true,
+				MarkdownDescription: "Name of the database to read collections from.",
+			},
+			"collections": schema.ListAttribute{
+				ElementType:         CollectionElementType,
+				MarkdownDescription: "List of collection resources. Refer to collection data source documentation for more details.",
 				Computed:            true,
 			},
 		},
 	}
 }
 
-func (d *DatabasesDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *CollectionsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	config, diags := resourceconfig.FromProviderData(req.ProviderData)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -76,7 +82,7 @@ func (d *DatabasesDataSource) Configure(ctx context.Context, req datasource.Conf
 	d.config = config
 }
 
-func (d *DatabasesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *CollectionsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	client := mongoclient.New(ctx, d.config.ClientConfig).WithLogger(d.config.Logger)
 	client.Run(func(client *mongoclient.MongoClient, err error) {
 		if err != nil {
@@ -86,7 +92,7 @@ func (d *DatabasesDataSource) Read(ctx context.Context, req datasource.ReadReque
 			return
 		}
 
-		var data DatabasesDataSourceModel
+		var data CollectionsDataSourceModel
 
 		// Read Terraform prior state data into the model
 		resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)

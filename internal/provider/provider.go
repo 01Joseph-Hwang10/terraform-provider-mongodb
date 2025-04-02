@@ -18,6 +18,7 @@ import (
 	resourceconfig "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/resource/config"
 	mdutils "github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/common/string/markdown"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/collection"
+	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/collections"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/database"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/databases"
 	"github.com/01Joseph-Hwang10/terraform-provider-mongodb/internal/service/document"
@@ -121,6 +122,7 @@ func (p *MongoProvider) DataSources(ctx context.Context) []func() datasource.Dat
 		database.NewDatabaseDataSource,
 		databases.NewDatabasesDataSource,
 		collection.NewCollectionDataSource,
+		collections.NewCollectionsDataSource,
 		document.NewDocumentDataSource,
 		documents.NewDocumentsDataSource,
 		index.NewIndexDataSource,

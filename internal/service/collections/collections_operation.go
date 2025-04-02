@@ -1,7 +1,7 @@
 // Copyright (c) 01Joseph-Hwang10
 // SPDX-License-Identifier: MPL-2.0
 
-package databases
+package collections
 
 import (
 	"fmt"
@@ -15,19 +15,20 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func dataSourceRead(client *mongoclient.MongoClient, data *DatabasesDataSourceModel) diag.Diagnostics {
+func dataSourceRead(client *mongoclient.MongoClient, data *CollectionsDataSourceModel) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	// Get the list of databases
+	// Get the list of collections
 	ctx := client.Context()
-	names, err := client.Client().ListDatabaseNames(ctx, bson.D{})
+	database := data.Database.ValueString()
+	names, err := client.Client().Database(database).ListCollectionNames(ctx, bson.D{})
 
 	if err != nil {
 		diags.Append(errs.NewMongoClientError(err).ToDiagnostic())
 		return diags
 	}
 
-	// Filter the databases by name
+	// Filter the collections by name
 	pattern, err := regexp.Compile(data.Name.ValueString())
 	if err != nil {
 		diags.Append(errs.NewUnexpectedError(err).ToDiagnostic())
@@ -46,30 +47,38 @@ func dataSourceRead(client *mongoclient.MongoClient, data *DatabasesDataSourceMo
 		matched = names
 	}
 
-	// Map the databases to the output format
-	var databases []attr.Value
+	var filtered []string
 	for _, name := range matched {
+		if name != mongoclient.PlaceholderCollectionName {
+			filtered = append(filtered, name)
+		}
+	}
+
+	// Map the collections to the output format
+	var collections []attr.Value
+	for _, name := range filtered {
 		database, errs := basetypes.NewObjectValue(
-			DatabaseElementType.AttrTypes,
+			CollectionElementType.AttrTypes,
 			map[string]attr.Value{
-				"id":   basetypes.NewStringValue(fmt.Sprintf("databases/%s", name)),
-				"name": basetypes.NewStringValue(name),
+				"id":       basetypes.NewStringValue(fmt.Sprintf("databases/%s/collections/%s", database, name)),
+				"database": basetypes.NewStringValue(database),
+				"name":     basetypes.NewStringValue(name),
 			},
 		)
 		if errs != nil {
 			diags.Append(errs...)
 			return diags
 		}
-		databases = append(databases, database)
+		collections = append(collections, database)
 	}
 
-	// Set the databases attribute
-	v, errs := basetypes.NewListValue(DatabaseElementType, databases)
+	// Set the collections attribute
+	v, errs := basetypes.NewListValue(CollectionElementType, collections)
 	if errs != nil {
 		diags.Append(errs...)
 		return diags
 	}
-	data.Databases = v
+	data.Collections = v
 
 	return diags
 }
